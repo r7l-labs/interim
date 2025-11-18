@@ -1,3 +1,7 @@
+  interim:
+    description: Open the Interim overview GUI
+    usage: /<command>
+    aliases: [la, to, town]
 name: Interim
 version: '${project.version}'
 main: org.r7l.interim.Interim

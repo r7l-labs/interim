@@ -53,9 +53,12 @@ public class Interim extends JavaPlugin {
         }
         
         // Register commands
-        TownCommand townCommand = new TownCommand(this);
-        getCommand("town").setExecutor(townCommand);
-        getCommand("town").setTabCompleter(townCommand);
+    TownCommand townCommand = new TownCommand(this);
+    getCommand("town").setExecutor(townCommand);
+    getCommand("town").setTabCompleter(townCommand);
+
+    // Register /interim and its aliases to open the overview GUI
+    getCommand("interim").setExecutor(new org.r7l.interim.command.InterimCommand(this));
         
         NationCommand nationCommand = new NationCommand(this);
         getCommand("nation").setExecutor(nationCommand);

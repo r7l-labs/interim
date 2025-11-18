@@ -45,7 +45,7 @@ public class ProtectionListener implements Listener {
         
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "You cannot break blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot break blocks in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -67,7 +67,7 @@ public class ProtectionListener implements Listener {
         
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "You cannot place blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot place blocks in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -88,21 +88,28 @@ public class ProtectionListener implements Listener {
             return;
         }
         
-        // Check if it's a container or interactive block
+        // Always allow doors and trapdoors to be opened by anyone
+        String type = block.getType().name();
+        if (type.contains("DOOR") || type.contains("TRAPDOOR")) {
+            return;
+        }
+
+        // Check if it's a protected block (container, etc.)
         if (!isProtectedBlock(block)) {
             return;
         }
-        
+
         Claim claim = dataManager.getClaim(block.getLocation());
-        
+
         if (claim == null) {
             // Wilderness - allow
             return;
         }
-        
+
+        // TODO: Add war logic for 1.0.0 (allow block/mob interaction if at war)
         if (!canInteract(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "You cannot interact with that in " + claim.getTown().getName() + "!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot interact with that in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -139,7 +146,7 @@ public class ProtectionListener implements Listener {
                 // Wilderness - check config
                 if (!plugin.getConfig().getBoolean("protection.wilderness-pvp", true)) {
                     event.setCancelled(true);
-                    attacker.sendMessage(ChatColor.RED + "PvP is disabled in the wilderness!");
+                    attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "PvP is disabled in the wilderness!");
                 }
                 return;
             }
@@ -149,7 +156,7 @@ public class ProtectionListener implements Listener {
             // Check if PvP is enabled in the town
             if (!town.isPvp()) {
                 event.setCancelled(true);
-                attacker.sendMessage(ChatColor.RED + "PvP is disabled in " + town.getName() + "!");
+                attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "PvP is disabled in " + town.getName() + "!");
                 return;
             }
             
@@ -165,7 +172,7 @@ public class ProtectionListener implements Listener {
                     // Same town
                     if (attackerTown.equals(victimTown)) {
                         event.setCancelled(true);
-                        attacker.sendMessage(ChatColor.RED + "You cannot attack your town members!");
+                        attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your town members!");
                         return;
                     }
                     
@@ -176,13 +183,13 @@ public class ProtectionListener implements Listener {
                         
                         if (attackerNation.equals(victimNation)) {
                             event.setCancelled(true);
-                            attacker.sendMessage(ChatColor.RED + "You cannot attack your nation members!");
+                            attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your nation members!");
                             return;
                         }
                         
                         if (attackerNation.isAlly(victimNation.getUuid())) {
                             event.setCancelled(true);
-                            attacker.sendMessage(ChatColor.RED + "You cannot attack your allies!");
+                            attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your allies!");
                             return;
                         }
                     }
@@ -196,7 +203,7 @@ public class ProtectionListener implements Listener {
             
             if (claim != null && !canBuild(attacker, claim)) {
                 event.setCancelled(true);
-                attacker.sendMessage(ChatColor.RED + "You cannot damage entities in " + claim.getTown().getName() + "!");
+                attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot damage entities in " + claim.getTown().getName() + "!");
             }
         }
     }
@@ -217,7 +224,7 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "You cannot break that in " + claim.getTown().getName() + "!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot break that in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -233,7 +240,7 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "You cannot place that in " + claim.getTown().getName() + "!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot place that in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -277,8 +284,8 @@ public class ProtectionListener implements Listener {
         // Show invites
         List<Invite> invites = dataManager.getInvites(player.getUniqueId());
         if (!invites.isEmpty()) {
-            player.sendMessage(ChatColor.GREEN + "You have " + invites.size() + " pending town invite(s)!");
-            player.sendMessage(ChatColor.YELLOW + "Type /town invites to view them.");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You have " + invites.size() + " pending town invite(s)!");
+            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "Type /town invites to view them.");
         }
     }
     
