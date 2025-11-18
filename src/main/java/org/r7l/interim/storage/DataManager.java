@@ -55,6 +55,12 @@ public class DataManager {
     public void removeTown(Town town) {
         towns.remove(town.getUuid());
         townsByName.remove(town.getName().toLowerCase());
+        
+        // Delete the JSON file
+        File file = new File(dataFolder, "towns/" + town.getUuid().toString() + ".json");
+        if (file.exists()) {
+            file.delete();
+        }
     }
     
     public Town getTown(UUID uuid) {
@@ -82,6 +88,12 @@ public class DataManager {
     public void removeNation(Nation nation) {
         nations.remove(nation.getUuid());
         nationsByName.remove(nation.getName().toLowerCase());
+        
+        // Delete the JSON file
+        File file = new File(dataFolder, "nations/" + nation.getUuid().toString() + ".json");
+        if (file.exists()) {
+            file.delete();
+        }
     }
     
     public Nation getNation(UUID uuid) {
