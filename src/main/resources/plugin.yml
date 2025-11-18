@@ -24,6 +24,10 @@ commands:
     usage: /<command> [args]
     aliases: [tadmin]
     permission: interim.admin
+  map:
+    description: Open the interactive claim map
+    usage: /<command>
+    aliases: [claimmap, cmap]
 
 permissions:
   interim.admin:

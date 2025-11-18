@@ -7,12 +7,14 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.r7l.interim.command.AdminCommand;
+import org.r7l.interim.command.MapCommand;
 import org.r7l.interim.command.NationCommand;
 import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
 import org.r7l.interim.config.ConfigUpdater;
 import org.r7l.interim.integration.BlueMapIntegration;
 import org.r7l.interim.integration.FloodgateIntegration;
+import org.r7l.interim.listener.GUIListener;
 import org.r7l.interim.listener.ProtectionListener;
 import org.r7l.interim.storage.DataManager;
 import org.r7l.interim.visual.SpawnParticleManager;
@@ -67,8 +69,13 @@ public class Interim extends JavaPlugin {
         getCommand("interimadmin").setExecutor(adminCommand);
         getCommand("interimadmin").setTabCompleter(adminCommand);
         
+        MapCommand mapCommand = new MapCommand(this);
+        getCommand("map").setExecutor(mapCommand);
+        getCommand("map").setTabCompleter(mapCommand);
+        
         // Register listeners
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
+        getServer().getPluginManager().registerEvents(new GUIListener(), this);
         
         // Setup BlueMap integration
         if (getConfig().getBoolean("integrations.bluemap.enabled", true)) {

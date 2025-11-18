@@ -11,13 +11,13 @@ mvn clean package
 if [ $? -eq 0 ]; then
     echo ""
     echo "✓ Build successful!"
-    echo "JAR location: target/interim-dev-0.0.8.jar"
+    echo "JAR location: target/interim-dev-0.0.9.jar"
     echo ""
     
     # Optional: Copy to test server
     if [ -d "test-server/plugins" ]; then
         echo "Copying to test server..."
-        cp target/interim-dev-0.0.8.jar test-server/plugins/
+        cp target/interim-dev-0.0.9.jar test-server/plugins/
         echo "✓ Copied to test server!"
     fi
 else

@@ -1,5 +1,5 @@
 # Interim Configuration
-# Version: dev-0.0.8
+# Version: dev-0.0.9
 
 # Town Settings
 town:
@@ -13,6 +13,8 @@ town:
   claim-cost: 100.0
   # Maximum chunks a town can claim
   max-claims: 100
+  # Require claims to be adjacent to existing claims
+  require-adjacent-claims: true
   # Upkeep cost per day (per chunk)
   upkeep-per-chunk: 10.0
   # Allow PvP in town by default
