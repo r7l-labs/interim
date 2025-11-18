@@ -517,7 +517,7 @@ public class DataManager {
         if (resident.getTown() != null) {
             json.addProperty("town", resident.getTown().getUuid().toString());
         }
-        json.addProperty("rank", resident.getRank().name());
+        json.addProperty("rank", resident.getRank() != null ? resident.getRank().name() : "RESIDENT");
         json.addProperty("joinedTown", resident.getJoinedTown());
         return json;
     }

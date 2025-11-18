@@ -227,7 +227,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             Resident resident = dataManager.getResident(residentId);
             if (resident != null) {
                 resident.setTown(null);
-                resident.setRank(null);
+                resident.setRank(TownRank.RESIDENT);
                 
                 Player player = Bukkit.getPlayer(residentId);
                 if (player != null && player.isOnline()) {
@@ -278,7 +278,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         
         town.removeResident(player.getUniqueId());
         resident.setTown(null);
-        resident.setRank(null);
+        resident.setRank(TownRank.RESIDENT);
         
         dataManager.saveAll();
         
