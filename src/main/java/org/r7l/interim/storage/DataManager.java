@@ -36,7 +36,9 @@ public class DataManager {
         this.claims = new HashMap<>();
         this.invites = new HashMap<>();
         
+        // Ensure directories exist and migrate legacy data if present
         createDirectories();
+        migrateLegacyData();
     }
     
     private void createDirectories() {
@@ -44,6 +46,78 @@ public class DataManager {
         new File(dataFolder, "nations").mkdirs();
         new File(dataFolder, "residents").mkdirs();
         new File(dataFolder, "claims").mkdirs();
+    }
+
+    /**
+     * Migrate legacy data from the plugin root data folder into the new data subfolder.
+     *
+     * Some older versions stored the data directly in the plugin folder (e.g. <plugin>/towns,
+     * <plugin>/claims) while newer versions use a dedicated <plugin>/data/ subfolder. To avoid
+     * data loss on upgrade, detect legacy directories and move them into the new location.
+     */
+    private void migrateLegacyData() {
+        File pluginFolder = dataFolder.getParentFile();
+        if (pluginFolder == null || !pluginFolder.exists()) return;
+
+        String[] entries = {"towns", "nations", "residents", "claims"};
+        for (String name : entries) {
+            File newDir = new File(dataFolder, name);
+            File legacyDir = new File(pluginFolder, name);
+
+            // If legacy exists and new is empty (or doesn't exist), attempt to move
+            if (legacyDir.exists()) {
+                // If newDir already contains files, skip migration for safety
+                boolean newHasContent = newDir.exists() && (newDir.listFiles() != null && newDir.listFiles().length > 0);
+                if (newHasContent) continue;
+
+                try {
+                    // Ensure parent exists
+                    newDir.getParentFile().mkdirs();
+
+                    // Move legacy directory to new location (attempt atomic move, fallback to copy)
+                    java.nio.file.Path src = legacyDir.toPath();
+                    java.nio.file.Path dst = newDir.toPath();
+                    try {
+                        java.nio.file.Files.move(src, dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        Bukkit.getLogger().info("Migrated legacy data: " + name + " -> data/" + name);
+                    } catch (IOException ex) {
+                        // Fallback: copy recursively
+                        copyDirectoryRecursive(legacyDir, newDir);
+                        // Attempt to delete legacy after copy
+                        deleteDirectoryRecursive(legacyDir);
+                        Bukkit.getLogger().info("Copied legacy data: " + name + " -> data/" + name);
+                    }
+                } catch (Exception e) {
+                    Bukkit.getLogger().warning("Failed to migrate legacy data for '" + name + "': " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void copyDirectoryRecursive(File src, File dst) throws IOException {
+        if (src.isDirectory()) {
+            if (!dst.exists()) dst.mkdirs();
+            String[] children = src.list();
+            if (children != null) {
+                for (String child : children) {
+                    copyDirectoryRecursive(new File(src, child), new File(dst, child));
+                }
+            }
+        } else {
+            java.nio.file.Files.copy(src.toPath(), dst.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private void deleteDirectoryRecursive(File dir) {
+        if (!dir.exists()) return;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) deleteDirectoryRecursive(f);
+                else f.delete();
+            }
+        }
+        dir.delete();
     }
     
     // Town methods
