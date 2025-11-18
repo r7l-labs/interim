@@ -5,16 +5,18 @@ import java.util.*;
 public class Resident {
     private final UUID uuid;
     private String name;
-    private Town town;
-    private TownRank rank;
+    private final Map<UUID, Town> towns; // townUUID -> Town
+    private final Map<UUID, TownRank> ranks; // townUUID -> Rank
+    private UUID primaryTown; // The main/primary town
     private long joinedTown;
     private boolean online;
     
     public Resident(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
-        this.town = null;
-        this.rank = TownRank.RESIDENT;
+        this.towns = new HashMap<>();
+        this.ranks = new HashMap<>();
+        this.primaryTown = null;
         this.joinedTown = System.currentTimeMillis();
         this.online = false;
     }
@@ -32,22 +34,92 @@ public class Resident {
     }
     
     public Town getTown() {
-        return town;
+        return primaryTown != null ? towns.get(primaryTown) : null;
+    }
+    
+    public Town getPrimaryTown() {
+        return getTown();
+    }
+    
+    public Map<UUID, Town> getTowns() {
+        return new HashMap<>(towns);
+    }
+    
+    public List<Town> getTownsList() {
+        return new ArrayList<>(towns.values());
     }
     
     public void setTown(Town town) {
-        this.town = town;
-        if (town != null) {
+        // For backwards compatibility - sets as primary town
+        if (town == null) {
+            if (primaryTown != null) {
+                towns.remove(primaryTown);
+                ranks.remove(primaryTown);
+                primaryTown = null;
+            }
+        } else {
+            addTown(town, TownRank.RESIDENT, true);
+        }
+    }
+    
+    public void addTown(Town town, TownRank rank, boolean setPrimary) {
+        towns.put(town.getUuid(), town);
+        ranks.put(town.getUuid(), rank);
+        if (setPrimary || primaryTown == null) {
+            primaryTown = town.getUuid();
             this.joinedTown = System.currentTimeMillis();
         }
     }
     
+    public void removeTown(UUID townUuid) {
+        towns.remove(townUuid);
+        ranks.remove(townUuid);
+        if (primaryTown != null && primaryTown.equals(townUuid)) {
+            // Set another town as primary if available
+            primaryTown = towns.isEmpty() ? null : towns.keySet().iterator().next();
+        }
+    }
+    
+    public void removeTown(Town town) {
+        removeTown(town.getUuid());
+    }
+    
+    public void setPrimaryTown(UUID townUuid) {
+        if (towns.containsKey(townUuid)) {
+            primaryTown = townUuid;
+        }
+    }
+    
+    public boolean isInTown(UUID townUuid) {
+        return towns.containsKey(townUuid);
+    }
+    
+    public boolean isInTown(Town town) {
+        return isInTown(town.getUuid());
+    }
+    
     public TownRank getRank() {
-        return rank;
+        return primaryTown != null ? ranks.get(primaryTown) : TownRank.RESIDENT;
+    }
+    
+    public TownRank getRank(UUID townUuid) {
+        return ranks.getOrDefault(townUuid, TownRank.RESIDENT);
+    }
+    
+    public TownRank getRank(Town town) {
+        return getRank(town.getUuid());
     }
     
     public void setRank(TownRank rank) {
-        this.rank = rank;
+        if (primaryTown != null) {
+            ranks.put(primaryTown, rank);
+        }
+    }
+    
+    public void setRank(UUID townUuid, TownRank rank) {
+        if (towns.containsKey(townUuid)) {
+            ranks.put(townUuid, rank);
+        }
     }
     
     public long getJoinedTown() {
@@ -63,11 +135,16 @@ public class Resident {
     }
     
     public boolean hasTown() {
-        return town != null;
+        return !towns.isEmpty();
+    }
+    
+    public int getTownCount() {
+        return towns.size();
     }
     
     public Nation getNation() {
-        return town != null ? town.getNation() : null;
+        Town primaryT = getTown();
+        return primaryT != null ? primaryT.getNation() : null;
     }
     
     public boolean hasNation() {
@@ -75,11 +152,19 @@ public class Resident {
     }
     
     public boolean isMayor() {
-        return rank == TownRank.MAYOR;
+        return getRank() == TownRank.MAYOR;
     }
     
     public boolean isAssistant() {
-        return rank == TownRank.ASSISTANT;
+        return getRank() == TownRank.ASSISTANT;
+    }
+    
+    public boolean isMayor(UUID townUuid) {
+        return getRank(townUuid) == TownRank.MAYOR;
+    }
+    
+    public boolean isAssistant(UUID townUuid) {
+        return getRank(townUuid) == TownRank.ASSISTANT;
     }
     
     @Override

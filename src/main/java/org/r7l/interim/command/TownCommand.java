@@ -101,13 +101,6 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // Check if player already has a town
-        Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
-        if (resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are already in a town!");
-            return true;
-        }
-        
         // Check if town name is taken
         if (dataManager.townExists(townName)) {
             player.sendMessage(ChatColor.RED + "A town with that name already exists!");
@@ -122,10 +115,10 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         // Create town
+        Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
         Town town = new Town(townName, player.getUniqueId());
         dataManager.addTown(town);
-        resident.setTown(town);
-        resident.setRank(TownRank.MAYOR);
+        resident.addTown(town, TownRank.MAYOR, true);
         
         // Charge player
         if (plugin.getEconomy() != null) {
@@ -172,8 +165,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         for (UUID residentUuid : town.getResidents()) {
             Resident r = dataManager.getResident(residentUuid);
             if (r != null) {
-                r.setTown(null);
-                r.setRank(TownRank.RESIDENT);
+                r.removeTown(town);
             }
         }
         
@@ -224,8 +216,8 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         Resident targetResident = dataManager.getOrCreateResident(target.getUniqueId(), target.getName());
-        if (targetResident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "That player is already in a town!");
+        if (targetResident.isInTown(town)) {
+            player.sendMessage(ChatColor.RED + "That player is already in this town!");
             return true;
         }
         
@@ -278,14 +270,13 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         Resident targetResident = dataManager.getResident(target.getUniqueId());
-        if (targetResident == null || !targetResident.hasTown() || !targetResident.getTown().equals(town)) {
+        if (targetResident == null || !targetResident.isInTown(town)) {
             player.sendMessage(ChatColor.RED + "That player is not in your town!");
             return true;
         }
         
         town.removeResident(target.getUniqueId());
-        targetResident.setTown(null);
-        targetResident.setRank(TownRank.RESIDENT);
+        targetResident.removeTown(town);
         
         player.sendMessage(ChatColor.GREEN + "Kicked " + target.getName() + " from the town!");
         target.sendMessage(ChatColor.RED + "You have been kicked from " + town.getName() + "!");
@@ -315,8 +306,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         town.removeResident(player.getUniqueId());
-        resident.setTown(null);
-        resident.setRank(TownRank.RESIDENT);
+        resident.removeTown(town);
         
         player.sendMessage(ChatColor.GREEN + "You have left " + town.getName() + "!");
         
@@ -471,6 +461,12 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         town.setSpawn(player.getLocation());
+        
+        // Refresh particle effect for the spawn
+        if (plugin.getParticleManager() != null) {
+            plugin.getParticleManager().refreshParticleEffect(town);
+        }
+        
         player.sendMessage(ChatColor.GREEN + "Town spawn has been set!");
         
         return true;

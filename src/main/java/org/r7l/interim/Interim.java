@@ -10,9 +10,12 @@ import org.r7l.interim.command.AdminCommand;
 import org.r7l.interim.command.NationCommand;
 import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
+import org.r7l.interim.config.ConfigUpdater;
 import org.r7l.interim.integration.BlueMapIntegration;
+import org.r7l.interim.integration.FloodgateIntegration;
 import org.r7l.interim.listener.ProtectionListener;
 import org.r7l.interim.storage.DataManager;
+import org.r7l.interim.visual.SpawnParticleManager;
 
 import java.io.File;
 
@@ -20,11 +23,17 @@ public class Interim extends JavaPlugin {
     private DataManager dataManager;
     private Economy economy;
     private BlueMapIntegration blueMapIntegration;
+    private FloodgateIntegration floodgateIntegration;
+    private SpawnParticleManager particleManager;
     
     @Override
     public void onEnable() {
         // Save default config
         saveDefaultConfig();
+        
+        // Update config version and add missing keys
+        ConfigUpdater configUpdater = new ConfigUpdater(this);
+        configUpdater.updateConfig();
         
         // Initialize data manager
         File dataFolder = new File(getDataFolder(), "data");
@@ -66,6 +75,15 @@ public class Interim extends JavaPlugin {
             setupBlueMap();
         }
         
+        // Setup Floodgate/Geyser integration
+        if (getConfig().getBoolean("integrations.geyser.enabled", true)) {
+            setupFloodgate();
+        }
+        
+        // Initialize particle manager
+        particleManager = new SpawnParticleManager(this);
+        particleManager.startAllParticleEffects();
+        
         // Start auto-save task
         startAutoSave();
         
@@ -77,6 +95,11 @@ public class Interim extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        // Stop particle effects
+        if (particleManager != null) {
+            particleManager.stopAllParticleEffects();
+        }
+        
         // Disable BlueMap integration
         if (blueMapIntegration != null) {
             blueMapIntegration.disable();
@@ -121,6 +144,20 @@ public class Interim extends JavaPlugin {
         }
     }
     
+    private void setupFloodgate() {
+        if (getServer().getPluginManager().getPlugin("floodgate") == null) {
+            getLogger().info("Floodgate not found. Bedrock player support limited to Java Edition features.");
+            return;
+        }
+        
+        try {
+            floodgateIntegration = new FloodgateIntegration(this);
+            floodgateIntegration.enable();
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize Floodgate integration: " + e.getMessage());
+        }
+    }
+    
     private void startAutoSave() {
         long saveInterval = getConfig().getLong("general.save-interval", 6000); // Default 5 minutes
         
@@ -145,5 +182,13 @@ public class Interim extends JavaPlugin {
     
     public BlueMapIntegration getBlueMapIntegration() {
         return blueMapIntegration;
+    }
+    
+    public SpawnParticleManager getParticleManager() {
+        return particleManager;
+    }
+    
+    public FloodgateIntegration getFloodgateIntegration() {
+        return floodgateIntegration;
     }
 }

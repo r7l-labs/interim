@@ -1,5 +1,5 @@
 # Interim Configuration
-# Version: dev-0.0.6
+# Version: dev-0.0.8
 
 # Town Settings
 town:
@@ -78,3 +78,19 @@ integrations:
     enabled: true
     # Update interval in seconds (0 = update on changes only)
     update-interval: 0
+  
+  # Geyser/Floodgate Integration
+  geyser:
+    # Enable Geyser/Floodgate integration for Bedrock players
+    enabled: true
+    # Allow Bedrock players to use all features
+    full-support: true
+
+# Visual Settings
+visual:
+  # Spawn Particle Effects
+  spawn-particles:
+    # Enable particle columns at town spawns
+    enabled: true
+    # Particle update rate (ticks)
+    update-rate: 2

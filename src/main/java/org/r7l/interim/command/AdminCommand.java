@@ -179,14 +179,16 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         OfflinePlayer mayor = Bukkit.getOfflinePlayer(mayorName);
         Resident resident = dataManager.getOrCreateResident(mayor.getUniqueId(), mayor.getName());
         
-        if (resident.hasTown()) {
-            sender.sendMessage("§cPlayer '" + mayorName + "' is already in a town.");
-            return true;
+        // Check if already mayor of another town
+        for (Town existingTown : resident.getTownsList()) {
+            if (existingTown.getMayor().equals(mayor.getUniqueId())) {
+                sender.sendMessage("§cPlayer '" + mayorName + "' is already mayor of '" + existingTown.getName() + "'.");
+                return true;
+            }
         }
         
         Town town = new Town(townName, mayor.getUniqueId());
-        resident.setTown(town);
-        resident.setRank(TownRank.MAYOR);
+        resident.addTown(town, TownRank.MAYOR, resident.getTownCount() == 0);
         
         dataManager.addTown(town);
         dataManager.addResident(resident);
@@ -226,8 +228,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         for (UUID residentId : new ArrayList<>(town.getResidents())) {
             Resident resident = dataManager.getResident(residentId);
             if (resident != null) {
-                resident.setTown(null);
-                resident.setRank(TownRank.RESIDENT);
+                resident.removeTown(town);
                 
                 Player player = Bukkit.getPlayer(residentId);
                 if (player != null && player.isOnline()) {
@@ -277,8 +278,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
         
         town.removeResident(player.getUniqueId());
-        resident.setTown(null);
-        resident.setRank(TownRank.RESIDENT);
+        resident.removeTown(town);
         
         dataManager.saveAll();
         
@@ -310,14 +310,13 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         OfflinePlayer player = Bukkit.getOfflinePlayer(playerName);
         Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
         
-        if (resident.hasTown()) {
-            sender.sendMessage("§cPlayer '" + playerName + "' is already in a town.");
+        if (resident.isInTown(town)) {
+            sender.sendMessage("§cPlayer '" + playerName + "' is already in this town.");
             return true;
         }
         
         town.addResident(player.getUniqueId());
-        resident.setTown(town);
-        resident.setRank(TownRank.RESIDENT);
+        resident.addTown(town, TownRank.RESIDENT, false);
         
         dataManager.saveAll();
         

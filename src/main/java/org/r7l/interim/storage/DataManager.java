@@ -514,10 +514,26 @@ public class DataManager {
         JsonObject json = new JsonObject();
         json.addProperty("uuid", resident.getUuid().toString());
         json.addProperty("name", resident.getName());
-        if (resident.getTown() != null) {
-            json.addProperty("town", resident.getTown().getUuid().toString());
+        
+        // Save multiple towns
+        JsonArray townsArray = new JsonArray();
+        JsonObject ranksObject = new JsonObject();
+        
+        for (Map.Entry<UUID, Town> entry : resident.getTowns().entrySet()) {
+            townsArray.add(entry.getKey().toString());
+            TownRank rank = resident.getRank(entry.getKey());
+            ranksObject.addProperty(entry.getKey().toString(), rank != null ? rank.name() : "RESIDENT");
         }
-        json.addProperty("rank", resident.getRank() != null ? resident.getRank().name() : "RESIDENT");
+        
+        json.add("towns", townsArray);
+        json.add("ranks", ranksObject);
+        
+        // Save primary town
+        Town primaryTown = resident.getPrimaryTown();
+        if (primaryTown != null) {
+            json.addProperty("primaryTown", primaryTown.getUuid().toString());
+        }
+        
         json.addProperty("joinedTown", resident.getJoinedTown());
         return json;
     }
@@ -528,15 +544,40 @@ public class DataManager {
         
         Resident resident = new Resident(uuid, name);
         
-        if (json.has("town")) {
+        // Load multiple towns
+        if (json.has("towns") && json.has("ranks")) {
+            JsonArray townsArray = json.getAsJsonArray("towns");
+            JsonObject ranksObject = json.getAsJsonObject("ranks");
+            
+            for (JsonElement element : townsArray) {
+                UUID townUuid = UUID.fromString(element.getAsString());
+                Town town = getTown(townUuid);
+                if (town != null) {
+                    TownRank rank = TownRank.RESIDENT;
+                    if (ranksObject.has(townUuid.toString())) {
+                        rank = TownRank.valueOf(ranksObject.get(townUuid.toString()).getAsString());
+                    }
+                    resident.addTown(town, rank, false);
+                }
+            }
+            
+            // Set primary town
+            if (json.has("primaryTown")) {
+                UUID primaryTownUuid = UUID.fromString(json.get("primaryTown").getAsString());
+                resident.setPrimaryTown(primaryTownUuid);
+            }
+        } else if (json.has("town")) {
+            // Backwards compatibility - single town
             UUID townUuid = UUID.fromString(json.get("town").getAsString());
             Town town = getTown(townUuid);
             if (town != null) {
-                resident.setTown(town);
+                TownRank rank = TownRank.RESIDENT;
+                if (json.has("rank")) {
+                    rank = TownRank.valueOf(json.get("rank").getAsString());
+                }
+                resident.addTown(town, rank, true);
             }
         }
-        
-        resident.setRank(TownRank.valueOf(json.get("rank").getAsString()));
         
         return resident;
     }
