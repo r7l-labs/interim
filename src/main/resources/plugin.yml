@@ -1,0 +1,32 @@
+name: Interim
+version: '${project.version}'
+main: org.r7l.interim.Interim
+api-version: '1.21'
+description: A comprehensive nations, towns, and claiming plugin
+author: r7l-labs
+softdepend: [Vault]
+
+commands:
+  town:
+    description: Town management commands
+    usage: /<command> [args]
+    aliases: [t]
+  nation:
+    description: Nation management commands
+    usage: /<command> [args]
+    aliases: [n]
+  plot:
+    description: Plot management commands
+    usage: /<command> [args]
+    aliases: [p]
+
+permissions:
+  interim.admin:
+    description: Admin permissions for Interim
+    default: op
+  interim.town.create:
+    description: Allow creating towns
+    default: true
+  interim.nation.create:
+    description: Allow creating nations
+    default: true

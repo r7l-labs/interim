@@ -1,0 +1,71 @@
+# Interim Configuration
+# Version 1.0.0
+
+# Town Settings
+town:
+  # Cost to create a town
+  creation-cost: 1000.0
+  # Maximum length of town name
+  max-name-length: 32
+  # Minimum length of town name
+  min-name-length: 3
+  # Cost per chunk claimed
+  claim-cost: 100.0
+  # Maximum chunks a town can claim
+  max-claims: 100
+  # Upkeep cost per day (per chunk)
+  upkeep-per-chunk: 10.0
+  # Allow PvP in town by default
+  default-pvp: false
+  # Allow explosions in town by default
+  default-explosions: false
+  # Allow mob spawning in town by default
+  default-mob-spawning: true
+
+# Nation Settings
+nation:
+  # Cost to create a nation
+  creation-cost: 5000.0
+  # Maximum length of nation name
+  max-name-length: 32
+  # Minimum length of nation name
+  min-name-length: 3
+  # Minimum towns required to form a nation
+  min-towns: 2
+  # Upkeep cost per day
+  daily-upkeep: 500.0
+  # Allow neutral nations (not in any alliance)
+  allow-neutral: true
+
+# General Settings
+general:
+  # Enable debug mode
+  debug: false
+  # Language file
+  language: en
+  # Data save interval (in ticks, 20 = 1 second)
+  save-interval: 6000
+  # Maximum invites a player can have at once
+  max-invites: 10
+
+# Protection Settings
+protection:
+  # Protect against block break
+  block-break: true
+  # Protect against block place
+  block-place: true
+  # Protect against container access
+  container-access: true
+  # Protect against entity damage
+  entity-damage: true
+  # Protect against PvP
+  pvp: true
+  # Wilderness PvP allowed
+  wilderness-pvp: true
+
+# Economy Settings
+economy:
+  # Enable economy features
+  enabled: true
+  # Use Vault for economy
+  use-vault: true
