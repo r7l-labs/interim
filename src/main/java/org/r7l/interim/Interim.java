@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.r7l.interim.command.AdminCommand;
 import org.r7l.interim.command.NationCommand;
 import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
@@ -50,6 +51,10 @@ public class Interim extends JavaPlugin {
         PlotCommand plotCommand = new PlotCommand(this);
         getCommand("plot").setExecutor(plotCommand);
         getCommand("plot").setTabCompleter(plotCommand);
+        
+        AdminCommand adminCommand = new AdminCommand(this);
+        getCommand("interimadmin").setExecutor(adminCommand);
+        getCommand("interimadmin").setTabCompleter(adminCommand);
         
         // Register listeners
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);

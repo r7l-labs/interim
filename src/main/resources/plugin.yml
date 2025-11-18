@@ -19,6 +19,11 @@ commands:
     description: Plot management commands
     usage: /<command> [args]
     aliases: [p]
+  interimadmin:
+    description: Administrative commands for Interim
+    usage: /<command> [args]
+    aliases: [tadmin]
+    permission: interim.admin
 
 permissions:
   interim.admin:
