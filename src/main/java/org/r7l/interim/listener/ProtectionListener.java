@@ -302,20 +302,26 @@ public class ProtectionListener implements Listener {
         Claim fromClaim = dataManager.getClaim(event.getFrom());
         Claim toClaim = dataManager.getClaim(event.getTo());
         
-        // Only send message if claim changed
-        if (fromClaim == toClaim) {
+        // Determine towns for from/to claims (null = wilderness)
+        Town fromTown = (fromClaim == null) ? null : fromClaim.getTown();
+        Town toTown = (toClaim == null) ? null : toClaim.getTown();
+
+        // Only act if the player moved into a different town (or between wilderness and a town).
+        // This avoids spamming when moving between multiple chunks that belong to the same town.
+        if ((fromTown == null && toTown == null) || (fromTown != null && fromTown.equals(toTown))) {
             return;
         }
-        
-        if (toClaim == null) {
-            player.sendMessage(ChatColor.GRAY + "~ Wilderness ~");
+
+        // Show the town/wilderness as a title instead of chat to make it more prominent and avoid repetition
+        if (toTown == null) {
+            player.sendTitle(ChatColor.GRAY + "~ Wilderness ~", "", 5, 60, 10);
         } else {
-            Town town = toClaim.getTown();
-            String message = ChatColor.GREEN + "~ " + town.getName() + " ~";
-            if (town.hasNation()) {
-                message += ChatColor.YELLOW + " [" + town.getNation().getName() + "]";
+            String title = ChatColor.GREEN + toTown.getName();
+            String subtitle = "";
+            if (toTown.hasNation()) {
+                subtitle = ChatColor.YELLOW + "[" + toTown.getNation().getName() + "]";
             }
-            player.sendMessage(message);
+            player.sendTitle(title, subtitle, 5, 60, 10);
         }
     }
     
