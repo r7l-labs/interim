@@ -4,7 +4,7 @@ main: org.r7l.interim.Interim
 api-version: '1.21'
 description: A comprehensive nations, towns, and claiming plugin
 author: r7l-labs
-softdepend: [Vault]
+softdepend: [Vault, BlueMap]
 
 commands:
   town:

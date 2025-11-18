@@ -1,5 +1,5 @@
 # Interim Configuration
-# Version dev-0.0.3
+# Version dev-0.0.4
 
 # Town Settings
 town:
@@ -69,3 +69,12 @@ economy:
   enabled: true
   # Use Vault for economy
   use-vault: true
+
+# Integration Settings
+integrations:
+  # BlueMap Integration
+  bluemap:
+    # Enable BlueMap integration
+    enabled: true
+    # Update interval in seconds (0 = update on changes only)
+    update-interval: 0

@@ -6,7 +6,7 @@
 
     <groupId>org.r7l</groupId>
     <artifactId>interim</artifactId>
-    <version>dev-0.0.3</version>
+    <version>dev-0.0.4</version>
     <packaging>jar</packaging>
 
     <name>Interim</name>
@@ -59,6 +59,10 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>bluecolored</id>
+            <url>https://repo.bluecolored.de/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -77,6 +81,12 @@
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.bluecolored.bluemap</groupId>
+            <artifactId>BlueMapAPI</artifactId>
+            <version>2.7.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

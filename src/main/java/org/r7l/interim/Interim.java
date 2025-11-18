@@ -10,6 +10,7 @@ import org.r7l.interim.command.AdminCommand;
 import org.r7l.interim.command.NationCommand;
 import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
+import org.r7l.interim.integration.BlueMapIntegration;
 import org.r7l.interim.listener.ProtectionListener;
 import org.r7l.interim.storage.DataManager;
 
@@ -18,6 +19,7 @@ import java.io.File;
 public class Interim extends JavaPlugin {
     private DataManager dataManager;
     private Economy economy;
+    private BlueMapIntegration blueMapIntegration;
     
     @Override
     public void onEnable() {
@@ -59,6 +61,11 @@ public class Interim extends JavaPlugin {
         // Register listeners
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         
+        // Setup BlueMap integration
+        if (getConfig().getBoolean("integrations.bluemap.enabled", true)) {
+            setupBlueMap();
+        }
+        
         // Start auto-save task
         startAutoSave();
         
@@ -70,6 +77,11 @@ public class Interim extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        // Disable BlueMap integration
+        if (blueMapIntegration != null) {
+            blueMapIntegration.disable();
+        }
+        
         // Save data
         getLogger().info("Saving data...");
         dataManager.saveAll();
@@ -94,6 +106,21 @@ public class Interim extends JavaPlugin {
         getLogger().info("Hooked into " + economy.getName() + " via Vault!");
     }
     
+    private void setupBlueMap() {
+        if (getServer().getPluginManager().getPlugin("BlueMap") == null) {
+            getLogger().info("BlueMap not found. Map integration disabled.");
+            return;
+        }
+        
+        try {
+            blueMapIntegration = new BlueMapIntegration(this);
+            blueMapIntegration.enable();
+            getLogger().info("BlueMap integration initialized!");
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize BlueMap integration: " + e.getMessage());
+        }
+    }
+    
     private void startAutoSave() {
         long saveInterval = getConfig().getLong("general.save-interval", 6000); // Default 5 minutes
         
@@ -114,5 +141,9 @@ public class Interim extends JavaPlugin {
     
     public Economy getEconomy() {
         return economy;
+    }
+    
+    public BlueMapIntegration getBlueMapIntegration() {
+        return blueMapIntegration;
     }
 }
