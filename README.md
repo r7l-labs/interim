@@ -1,6 +1,6 @@
-# Interim - A Comprehensive Nations Plugin for Paper 1.21.1
+# Interim - A Comprehensive Nations Plugin for Paper 1.21.9
 
-**Interim** is a full-featured nations, towns, and claiming plugin for Paper 1.21.1 servers. It provides everything you need to create a political server with towns, nations, claiming mechanics, protection, and economy integration.
+**Interim** is a full-featured nations, towns, and claiming plugin for Paper 1.21.9 servers. It provides everything you need to create a political server with towns, nations, claiming mechanics, protection, and economy integration.
 
 ## Features
 
@@ -210,7 +210,7 @@ The compiled JAR will be in the `target/` directory.
 
 ## Dependencies
 
-- **Paper 1.21.1** (required)
+- **Paper 1.21.9** (required)
 - **Vault** (optional, for economy features)
 - **An economy plugin** like EssentialsX (optional)
 
