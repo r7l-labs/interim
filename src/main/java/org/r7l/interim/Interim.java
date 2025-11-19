@@ -90,6 +90,8 @@ public class Interim extends JavaPlugin {
         // Register listeners
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
+        // War listener: awards points on player kills when nations are at war
+        getServer().getPluginManager().registerEvents(new org.r7l.interim.listener.WarListener(this), this);
         
         // Setup BlueMap integration
         if (getConfig().getBoolean("integrations.bluemap.enabled", true)) {
