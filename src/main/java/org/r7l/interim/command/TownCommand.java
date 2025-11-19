@@ -158,8 +158,13 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-    // Create town
+        // Create town
         Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
+        // Prevent creating multiple towns per player
+        if (resident.hasTown()) {
+            player.sendMessage(error("You already have a town. You cannot create multiple towns."));
+            return true;
+        }
         Town town = new Town(townName, player.getUniqueId());
         dataManager.addTown(town);
         resident.addTown(town, TownRank.MAYOR, true);
@@ -169,12 +174,6 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             plugin.getEconomy().withdrawPlayer(player, cost);
         }
         
-        // Set the town spawn at the player's location and start particles
-        town.setSpawn(player.getLocation());
-        if (plugin.getParticleManager() != null) {
-            plugin.getParticleManager().startParticleEffect(town);
-        }
-
         player.sendMessage(success("Town '" + townName + "' has been created!"));
 
         // Only allow claiming in configured worlds
@@ -184,14 +183,29 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(error("Claiming is not allowed in this world."));
             return true;
         }
-        // Auto-claim the chunk where the player is standing
+        // Auto-claim the chunk where the player is standing. If successful, set spawn (homeblock).
         int chunkX = player.getLocation().getBlockX() >> 4;
         int chunkZ = player.getLocation().getBlockZ() >> 4;
+        boolean autoClaimed = false;
         if (!dataManager.isClaimed(currentWorld, chunkX, chunkZ)) {
-            Claim claim = new Claim(player.getLocation().getChunk(), town);
+            Claim claim = new Claim(player.getLocation().getChunk(), town, player.getUniqueId());
             dataManager.addClaim(claim);
             town.addClaim(claim);
+            autoClaimed = true;
             player.sendMessage(success("Starting chunk claimed for " + town.getName() + "!"));
+        }
+
+        // Only set spawn if we successfully auto-claimed the homeblock chunk
+        if (autoClaimed) {
+            town.setSpawn(player.getLocation());
+            if (plugin.getParticleManager() != null) {
+                plugin.getParticleManager().startParticleEffect(town);
+            }
+            player.sendMessage(success("Town spawn set at your current location (homeblock)."));
+        } else {
+            // Do not set spawn if the chunk could not be claimed. Instruct the player to set spawn after claiming a homeblock.
+            player.sendMessage(info("Town created, but spawn was not set because this chunk could not be claimed."));
+            player.sendMessage(info("Claim a chunk for your town and then use /town setspawn to set the homeblock spawn."));
         }
         // Broadcast creation to server with a pretty message
         Bukkit.getServer().broadcastMessage(plugin.success("Town '" + town.getName() + "' has been created by " + player.getName() + "!"));
@@ -527,6 +541,16 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         if (claim == null || !claim.getTown().equals(town)) {
             player.sendMessage(error("This chunk is not claimed by your town!"));
             return true;
+        }
+
+        // Prevent unclaiming the town homeblock (chunk containing the spawn)
+        if (town.getSpawn() != null) {
+            int spawnChunkX = town.getSpawn().getBlockX() >> 4;
+            int spawnChunkZ = town.getSpawn().getBlockZ() >> 4;
+            if (claim.getX() == spawnChunkX && claim.getZ() == spawnChunkZ && claim.getWorldName().equals(town.getSpawn().getWorld().getName())) {
+                player.sendMessage(error("You cannot unclaim the town homeblock. Move the spawn first with /town setspawn to another claimed chunk."));
+                return true;
+            }
         }
 
         // Prevent disconnecting the town's claims
