@@ -11,7 +11,7 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.ChatColor;
+// ChatColor deprecated — use plugin messaging helpers instead
 import org.r7l.interim.Interim;
 import org.r7l.interim.model.*;
 import org.r7l.interim.storage.DataManager;
@@ -305,7 +305,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleKick(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can kick from towns.");
+            sender.sendMessage(error("Only players can kick from towns."));
             return true;
         }
         
@@ -735,34 +735,34 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 2) {
             town = dataManager.getTown(args[1]);
             if (town == null) {
-                sender.sendMessage(ChatColor.RED + "Town not found!");
+                sender.sendMessage(error("Town not found!"));
                 return true;
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.RED + "Usage: /town info <town>");
+                sender.sendMessage(error("Usage: /town info <town>"));
                 return true;
             }
             Player player = (Player) sender;
             Resident resident = dataManager.getResident(player.getUniqueId());
             if (resident == null || !resident.hasTown()) {
-                sender.sendMessage(ChatColor.RED + "You are not in a town!");
+                sender.sendMessage(error("You are not in a town!"));
                 return true;
             }
             town = resident.getTown();
         }
         
-        sender.sendMessage(ChatColor.GOLD + "=== " + town.getName() + " ===");
+        sender.sendMessage(pref("=== " + town.getName() + " ==="));
         Resident mayor = dataManager.getResident(town.getMayor());
-        sender.sendMessage(ChatColor.YELLOW + "Mayor: " + (mayor != null ? mayor.getName() : "Unknown"));
-        sender.sendMessage(ChatColor.YELLOW + "Residents: " + town.getResidentCount());
-        sender.sendMessage(ChatColor.YELLOW + "Claims: " + town.getClaimCount());
-        sender.sendMessage(ChatColor.YELLOW + "Bank: " + town.getBank());
+        sender.sendMessage(info("Mayor: " + (mayor != null ? mayor.getName() : "Unknown")));
+        sender.sendMessage(info("Residents: " + town.getResidentCount()));
+        sender.sendMessage(info("Claims: " + town.getClaimCount()));
+        sender.sendMessage(info("Bank: " + town.getBank()));
         if (town.hasNation()) {
-            sender.sendMessage(ChatColor.YELLOW + "Nation: " + town.getNation().getName());
+            sender.sendMessage(info("Nation: " + town.getNation().getName()));
         }
-        sender.sendMessage(ChatColor.YELLOW + "Open: " + (town.isOpen() ? "Yes" : "No"));
-        sender.sendMessage(ChatColor.YELLOW + "PvP: " + (town.isPvp() ? "Enabled" : "Disabled"));
+        sender.sendMessage(info("Open: " + (town.isOpen() ? "Yes" : "No")));
+        sender.sendMessage(info("PvP: " + (town.isPvp() ? "Enabled" : "Disabled")));
         
         // If sender is a player, also show the town board as a subtitle
         if (sender instanceof Player) {
@@ -781,13 +781,13 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Collection<Town> towns = dataManager.getTowns();
         
         if (towns.isEmpty()) {
-            sender.sendMessage(ChatColor.YELLOW + "No towns exist!");
+            sender.sendMessage(info("No towns exist!"));
             return true;
         }
-        
-        sender.sendMessage(ChatColor.GOLD + "=== Towns (" + towns.size() + ") ===");
+
+        sender.sendMessage(pref("=== Towns (" + towns.size() + ") ==="));
         for (Town town : towns) {
-            sender.sendMessage(ChatColor.YELLOW + "- " + town.getName() + " (" + town.getResidentCount() + " residents)");
+            sender.sendMessage(info("- " + town.getName() + " (" + town.getResidentCount() + " residents)"));
         }
         
         return true;
@@ -795,7 +795,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleToggle(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can toggle settings.");
+            sender.sendMessage(error("Only players can toggle settings."));
             return true;
         }
         
@@ -803,41 +803,41 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor()) {
-            player.sendMessage(ChatColor.RED + "Only the mayor can toggle settings!");
+            player.sendMessage(error("Only the mayor can toggle settings!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town toggle <pvp|explosions|mobs|open>");
+            player.sendMessage(error("Usage: /town toggle <pvp|explosions|mobs|open>"));
             return true;
         }
         
         switch (args[1].toLowerCase()) {
             case "pvp":
                 town.setPvp(!town.isPvp());
-                player.sendMessage(ChatColor.GREEN + "PvP " + (town.isPvp() ? "enabled" : "disabled") + "!");
+                player.sendMessage(success("PvP " + (town.isPvp() ? "enabled" : "disabled") + "!"));
                 break;
             case "explosions":
                 town.setExplosions(!town.isExplosions());
-                player.sendMessage(ChatColor.GREEN + "Explosions " + (town.isExplosions() ? "enabled" : "disabled") + "!");
+                player.sendMessage(success("Explosions " + (town.isExplosions() ? "enabled" : "disabled") + "!"));
                 break;
             case "mobs":
                 town.setMobSpawning(!town.isMobSpawning());
-                player.sendMessage(ChatColor.GREEN + "Mob spawning " + (town.isMobSpawning() ? "enabled" : "disabled") + "!");
+                player.sendMessage(success("Mob spawning " + (town.isMobSpawning() ? "enabled" : "disabled") + "!"));
                 break;
             case "open":
                 town.setOpen(!town.isOpen());
-                player.sendMessage(ChatColor.GREEN + "Town is now " + (town.isOpen() ? "open" : "closed") + "!");
+                player.sendMessage(success("Town is now " + (town.isOpen() ? "open" : "closed") + "!"));
                 break;
             default:
-                player.sendMessage(ChatColor.RED + "Invalid option! Options: pvp, explosions, mobs, open");
+                player.sendMessage(error("Invalid option! Options: pvp, explosions, mobs, open"));
                 break;
         }
         
@@ -846,7 +846,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleRank(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can manage ranks.");
+            sender.sendMessage(error("Only players can manage ranks."));
             return true;
         }
         
@@ -854,31 +854,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor()) {
-            player.sendMessage(ChatColor.RED + "Only the mayor can manage ranks!");
+            player.sendMessage(error("Only the mayor can manage ranks!"));
             return true;
         }
         
         if (args.length < 3) {
-            player.sendMessage(ChatColor.RED + "Usage: /town rank <player> <assistant|resident>");
+            player.sendMessage(error("Usage: /town rank <player> <assistant|resident>"));
             return true;
         }
         
         Player target = plugin.getServer().getPlayer(args[1]);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found!");
+            player.sendMessage(error("Player not found!"));
             return true;
         }
         
         Resident targetResident = dataManager.getResident(target.getUniqueId());
         if (targetResident == null || !targetResident.hasTown() || !targetResident.getTown().equals(town)) {
-            player.sendMessage(ChatColor.RED + "That player is not in your town!");
+            player.sendMessage(error("That player is not in your town!"));
             return true;
         }
         
@@ -886,15 +886,15 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         if (rankStr.equals("assistant")) {
             town.addAssistant(target.getUniqueId());
             targetResident.setRank(TownRank.ASSISTANT);
-            player.sendMessage(ChatColor.GREEN + target.getName() + " is now an assistant!");
-            target.sendMessage(ChatColor.GREEN + "You have been promoted to assistant!");
+            player.sendMessage(success(target.getName() + " is now an assistant!"));
+            target.sendMessage(success("You have been promoted to assistant!"));
         } else if (rankStr.equals("resident")) {
             town.removeAssistant(target.getUniqueId());
             targetResident.setRank(TownRank.RESIDENT);
-            player.sendMessage(ChatColor.GREEN + target.getName() + " is now a resident!");
-            target.sendMessage(ChatColor.YELLOW + "You have been demoted to resident!");
+            player.sendMessage(success(target.getName() + " is now a resident!"));
+            target.sendMessage(info("You have been demoted to resident!"));
         } else {
-            player.sendMessage(ChatColor.RED + "Invalid rank! Options: assistant, resident");
+            player.sendMessage(error("Invalid rank! Options: assistant, resident"));
         }
         
         return true;
@@ -902,7 +902,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleBoard(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can set the board.");
+            sender.sendMessage(error("Only players can set the board."));
             return true;
         }
         
@@ -910,32 +910,32 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to set the board!");
+            player.sendMessage(error("You don't have permission to set the board!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town board <message>");
+            player.sendMessage(error("Usage: /town board <message>"));
             return true;
         }
         
         String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         town.setBoard(message);
-        player.sendMessage(ChatColor.GREEN + "Town board updated!");
+    player.sendMessage(success("Town board updated!"));
         
         return true;
     }
     
     private boolean handleRename(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can rename towns.");
+            sender.sendMessage(error("Only players can rename towns."));
             return true;
         }
         
@@ -943,19 +943,19 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor()) {
-            player.sendMessage(ChatColor.RED + "Only the mayor can rename the town!");
+            player.sendMessage(error("Only the mayor can rename the town!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town rename <name>");
+            player.sendMessage(error("Usage: /town rename <name>"));
             return true;
         }
         
@@ -966,17 +966,17 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         int maxLength = plugin.getConfig().getInt("town.max-name-length", 32);
         
         if (newName.length() < minLength || newName.length() > maxLength) {
-            player.sendMessage(ChatColor.RED + "Town name must be between " + minLength + " and " + maxLength + " characters.");
+            player.sendMessage(error("Town name must be between " + minLength + " and " + maxLength + " characters."));
             return true;
         }
         
         if (!newName.matches("[a-zA-Z0-9_]+")) {
-            player.sendMessage(ChatColor.RED + "Town name can only contain letters, numbers, and underscores.");
+            player.sendMessage(error("Town name can only contain letters, numbers, and underscores."));
             return true;
         }
         
         if (dataManager.townExists(newName)) {
-            player.sendMessage(ChatColor.RED + "A town with that name already exists!");
+            player.sendMessage(error("A town with that name already exists!"));
             return true;
         }
         
@@ -987,20 +987,20 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         dataManager.removeTown(town);
         dataManager.addTown(town);
         
-        player.sendMessage(ChatColor.GREEN + "Town renamed from " + oldName + " to " + newName + "!");
+    player.sendMessage(success("Town renamed from " + oldName + " to " + newName + "!"));
         
         return true;
     }
     
     private boolean handleAccept(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can accept invites.");
+            sender.sendMessage(error("Only players can accept invites."));
             return true;
         }
         Player player = (Player) sender;
         List<Invite> invites = dataManager.getInvites(player.getUniqueId());
         if (invites.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "You have no pending invites.");
+            player.sendMessage(error("You have no pending invites."));
             return true;
         }
         String townName = args.length > 1 ? args[1] : null;
@@ -1016,31 +1016,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             invite = invites.get(0);
         }
         if (invite == null) {
-            player.sendMessage(ChatColor.RED + "No invite found for that town.");
+            player.sendMessage(error("No invite found for that town."));
             return true;
         }
         Town town = dataManager.getTown(invite.getTownName());
         if (town == null) {
-            player.sendMessage(ChatColor.RED + "That town no longer exists.");
+            player.sendMessage(error("That town no longer exists."));
             dataManager.removeInvite(player.getUniqueId(), invite);
             return true;
         }
         Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
         resident.addTown(town, TownRank.RESIDENT, true);
         dataManager.removeInvite(player.getUniqueId(), invite);
-        player.sendMessage(ChatColor.GREEN + "You have joined " + town.getName() + "!");
+    player.sendMessage(success("You have joined " + town.getName() + "!"));
         return true;
     }
 
     private boolean handleDeny(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can deny invites.");
+            sender.sendMessage(error("Only players can deny invites."));
             return true;
         }
         Player player = (Player) sender;
         List<Invite> invites = dataManager.getInvites(player.getUniqueId());
         if (invites.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "You have no pending invites.");
+            player.sendMessage(error("You have no pending invites."));
             return true;
         }
         String townName = args.length > 1 ? args[1] : null;
@@ -1056,11 +1056,11 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             invite = invites.get(0);
         }
         if (invite == null) {
-            player.sendMessage(ChatColor.RED + "No invite found for that town.");
+            player.sendMessage(error("No invite found for that town."));
             return true;
         }
         dataManager.removeInvite(player.getUniqueId(), invite);
-        player.sendMessage(ChatColor.YELLOW + "You have denied the invite to " + invite.getTownName() + ".");
+    player.sendMessage(info("You have denied the invite to " + invite.getTownName() + "."));
         return true;
     }
     

@@ -3,7 +3,7 @@
 
 package org.r7l.interim.listener;
 
-import org.bukkit.ChatColor;
+// Use Interim messaging helpers instead of ChatColor constants
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -136,7 +136,7 @@ public class ProtectionListener implements Listener {
         
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage("§9§l[Interim] §7You cannot break blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage(plugin.error("You cannot break blocks in " + claim.getTown().getName() + "!"));
         }
     }
     
@@ -164,7 +164,7 @@ public class ProtectionListener implements Listener {
         // Block all other block placement for non-members
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage("§9§l[Interim] §7You cannot place blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage(plugin.error("You cannot place blocks in " + claim.getTown().getName() + "!"));
         }
     }
     
@@ -199,7 +199,7 @@ public class ProtectionListener implements Listener {
         // Block all other block interaction for non-members
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage("§9§l[Interim] §7You cannot interact with that in " + claim.getTown().getName() + "!");
+            player.sendMessage(plugin.error("You cannot interact with that in " + claim.getTown().getName() + "!"));
         }
     }
     
@@ -298,7 +298,7 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage("§9§l[Interim] §7You cannot break that in " + claim.getTown().getName() + "!");
+            player.sendMessage(plugin.error("You cannot break that in " + claim.getTown().getName() + "!"));
         }
     }
     
@@ -314,7 +314,7 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage("§9§l[Interim] §7You cannot place that in " + claim.getTown().getName() + "!");
+            player.sendMessage(plugin.error("You cannot place that in " + claim.getTown().getName() + "!"));
         }
     }
     
@@ -367,8 +367,8 @@ public class ProtectionListener implements Listener {
         // Show invites
         List<Invite> invites = dataManager.getInvites(player.getUniqueId());
         if (!invites.isEmpty()) {
-            player.sendMessage("§9§l[Interim] §7You have " + invites.size() + " pending town invite(s)!");
-            player.sendMessage("§9§l[Interim] §7Type /town invites to view them.");
+            player.sendMessage(plugin.pref("You have " + invites.size() + " pending town invite(s)!"));
+            player.sendMessage(plugin.pref("Type /town invites to view them."));
         }
     }
     
