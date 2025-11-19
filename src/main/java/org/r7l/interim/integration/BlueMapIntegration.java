@@ -69,8 +69,8 @@ public class BlueMapIntegration {
     }
     
     private void updateMarkersForMap(BlueMapMap map) {
-        String worldId = map.getWorld().getId();
-        World world = Bukkit.getWorld(worldId);
+    String worldName = map.getWorld().getSaveFolder().getFileName().toString();
+    World world = Bukkit.getWorld(worldName);
         
         if (world == null) return;
         
