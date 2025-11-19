@@ -11,6 +11,7 @@ public class Claim {
     private final int x;
     private final int z;
     private Town town;
+    private java.util.UUID owner;
     private ClaimType type;
     private long claimedTime;
     private boolean pvpEnabled;
@@ -18,10 +19,15 @@ public class Claim {
     private boolean mobSpawningEnabled;
     
     public Claim(World world, int x, int z, Town town) {
+        this(world, x, z, town, town.getMayor());
+    }
+
+    public Claim(World world, int x, int z, Town town, java.util.UUID owner) {
         this.worldName = world.getName();
         this.x = x;
         this.z = z;
         this.town = town;
+        this.owner = owner;
         this.type = ClaimType.NORMAL;
         this.claimedTime = System.currentTimeMillis();
         this.pvpEnabled = false;
@@ -31,6 +37,10 @@ public class Claim {
     
     public Claim(Chunk chunk, Town town) {
         this(chunk.getWorld(), chunk.getX(), chunk.getZ(), town);
+    }
+
+    public Claim(Chunk chunk, Town town, java.util.UUID owner) {
+        this(chunk.getWorld(), chunk.getX(), chunk.getZ(), town, owner);
     }
     
     public String getWorldName() {
@@ -47,6 +57,14 @@ public class Claim {
     
     public Town getTown() {
         return town;
+    }
+
+    public java.util.UUID getOwner() {
+        return owner;
+    }
+
+    public void setOwner(java.util.UUID owner) {
+        this.owner = owner;
     }
     
     public void setTown(Town town) {

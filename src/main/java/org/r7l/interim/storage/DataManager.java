@@ -839,6 +839,9 @@ public class DataManager {
         json.addProperty("x", claim.getX());
         json.addProperty("z", claim.getZ());
         json.addProperty("town", claim.getTown().getUuid().toString());
+        if (claim.getOwner() != null) {
+            json.addProperty("owner", claim.getOwner().toString());
+        }
         json.addProperty("type", claim.getType().name());
         json.addProperty("claimedTime", claim.getClaimedTime());
         return json;
@@ -853,7 +856,17 @@ public class DataManager {
         Town town = getTown(townUuid);
         if (town == null) return null;
         
-        Claim claim = new Claim(Bukkit.getWorld(worldName), x, z, town);
+        Claim claim;
+        if (json.has("owner")) {
+            try {
+                java.util.UUID owner = java.util.UUID.fromString(json.get("owner").getAsString());
+                claim = new Claim(Bukkit.getWorld(worldName), x, z, town, owner);
+            } catch (Exception e) {
+                claim = new Claim(Bukkit.getWorld(worldName), x, z, town);
+            }
+        } else {
+            claim = new Claim(Bukkit.getWorld(worldName), x, z, town);
+        }
         claim.setType(ClaimType.valueOf(json.get("type").getAsString()));
         
         return claim;

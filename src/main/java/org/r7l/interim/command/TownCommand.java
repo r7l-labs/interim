@@ -418,6 +418,13 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(error("This chunk is already claimed!"));
             return true;
         }
+        // Enforce per-player claim limit within their town
+        int maxPerPlayer = plugin.getConfig().getInt("town.max-claims-per-player", 12);
+        long playerOwned = town.getClaims().stream().filter(c -> player.getUniqueId().equals(c.getOwner())).count();
+        if (playerOwned >= maxPerPlayer) {
+            player.sendMessage(error("You have reached your personal claim limit in this town (" + maxPerPlayer + ")!"));
+            return true;
+        }
             // Prevent disconnected claims: must be adjacent to an existing claim
             boolean isAdjacent = false;
             for (Claim c : town.getClaims()) {
@@ -446,7 +453,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        Claim claim = new Claim(player.getLocation().getChunk(), town);
+        Claim claim = new Claim(player.getLocation().getChunk(), town, player.getUniqueId());
         dataManager.addClaim(claim);
         town.addClaim(claim);
         
