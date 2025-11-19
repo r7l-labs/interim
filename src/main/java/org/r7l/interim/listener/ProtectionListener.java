@@ -426,6 +426,16 @@ public class ProtectionListener implements Listener {
             player.sendTitle(title, subtitle, 5, 60, 10);
         }
     }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerCommand(org.bukkit.event.player.PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        if (plugin.hasActiveTeleport(player.getUniqueId())) {
+            // Block commands while teleport countdown is active
+            event.setCancelled(true);
+            player.sendMessage(plugin.info("Commands are disabled while teleporting."));
+        }
+    }
     
     private boolean canBuild(Player player, Claim claim) {
         Resident resident = dataManager.getResident(player.getUniqueId());

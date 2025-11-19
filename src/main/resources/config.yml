@@ -27,6 +27,8 @@ town:
   teleport-cost: 200.0
   # Teleport delay in seconds (shows a bossbar countdown)
   teleport-delay-seconds: 15
+  # How long /town view shows claim borders (seconds)
+  view-duration-seconds: 15
 
 # Nation Settings
 nation:

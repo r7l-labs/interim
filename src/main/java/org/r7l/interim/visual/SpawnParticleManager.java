@@ -4,7 +4,9 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.r7l.interim.model.Claim;
 import org.r7l.interim.Interim;
 import org.r7l.interim.model.Town;
 
@@ -132,5 +134,65 @@ public class SpawnParticleManager {
     
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Show claim borders as particles to a single player for a duration (seconds).
+     */
+    public void showClaimBorders(Player player, java.util.Collection<Claim> claims, int durationSeconds) {
+        if (!enabled || player == null || claims == null || claims.isEmpty()) return;
+
+        World world = player.getWorld();
+        // task to spawn border particles periodically
+        BukkitRunnable task = new BukkitRunnable() {
+            int ticksLeft = durationSeconds * 20;
+
+            @Override
+            public void run() {
+                if (ticksLeft <= 0 || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                int playerChunkX = player.getLocation().getBlockX() >> 4;
+                int playerChunkZ = player.getLocation().getBlockZ() >> 4;
+                int radius = plugin.getConfig().getInt("town.view-radius-chunks", 10);
+
+                for (Claim claim : claims) {
+                    if (!claim.getWorldName().equals(world.getName())) continue;
+                    int chunkX = claim.getX();
+                    int chunkZ = claim.getZ();
+
+                    // skip claims outside configured radius
+                    int dx = Math.abs(chunkX - playerChunkX);
+                    int dz = Math.abs(chunkZ - playerChunkZ);
+                    if (Math.max(dx, dz) > radius) continue;
+
+                    int baseX = chunkX << 4;
+                    int baseZ = chunkZ << 4;
+                    double y = player.getLocation().getY();
+
+                    // spawn particles along the four edges of the chunk every 2 blocks
+                    for (int i = 0; i <= 16; i += 2) {
+                        // north edge (z = baseZ)
+                        Location nLoc = new Location(world, baseX + i, y, baseZ + 0.5);
+                        world.spawnParticle(Particle.DUST, nLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
+                        // south edge (z = baseZ+15)
+                        Location sLoc = new Location(world, baseX + i, y, baseZ + 15 + 0.5);
+                        world.spawnParticle(Particle.DUST, sLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
+                        // west edge (x = baseX)
+                        Location wLoc = new Location(world, baseX + 0.5, y, baseZ + i);
+                        world.spawnParticle(Particle.DUST, wLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
+                        // east edge (x = baseX+15)
+                        Location eLoc = new Location(world, baseX + 15 + 0.5, y, baseZ + i);
+                        world.spawnParticle(Particle.DUST, eLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
+                    }
+                }
+
+                ticksLeft -= 5; // runs every 5 ticks below
+            }
+        };
+
+        task.runTaskTimer(plugin, 0L, 5L);
     }
 }

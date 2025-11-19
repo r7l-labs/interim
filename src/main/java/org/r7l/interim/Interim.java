@@ -217,6 +217,62 @@ public class Interim extends JavaPlugin {
     public boolean hasActiveTeleport(java.util.UUID playerUuid) {
         return activeTeleports.containsKey(playerUuid);
     }
+
+    /**
+     * Check whether the provided location is inside any WorldGuard region.
+     * This method uses reflection so WorldGuard is optional at compile-time.
+     */
+    public boolean isLocationInWorldGuardRegion(org.bukkit.Location loc) {
+        if (loc == null) return false;
+        org.bukkit.plugin.Plugin wg = getServer().getPluginManager().getPlugin("WorldGuard");
+        if (wg == null) return false;
+
+        try {
+            // Try classic WorldGuardPlugin#getRegionManager(World)
+            java.lang.reflect.Method getRegionManager = wg.getClass().getMethod("getRegionManager", org.bukkit.World.class);
+            Object regionManager = getRegionManager.invoke(wg, loc.getWorld());
+            if (regionManager == null) return false;
+
+            java.lang.reflect.Method getRegions = regionManager.getClass().getMethod("getRegions");
+            Object regionsObj = getRegions.invoke(regionManager);
+            if (regionsObj instanceof java.util.Map) {
+                java.util.Map<?,?> regions = (java.util.Map<?,?>) regionsObj;
+                int x = loc.getBlockX();
+                int y = loc.getBlockY();
+                int z = loc.getBlockZ();
+                for (Object region : regions.values()) {
+                    if (region == null) continue;
+                    try {
+                        // Try contains(int x,int y,int z)
+                        java.lang.reflect.Method contains = region.getClass().getMethod("contains", int.class, int.class, int.class);
+                        Object res = contains.invoke(region, x, y, z);
+                        if (res instanceof Boolean && (Boolean) res) return true;
+                    } catch (NoSuchMethodException e) {
+                        // Try BlockVector3.contains(BlockVector3) style: construct BlockVector3 and call contains
+                        try {
+                            Class<?> bvClass = Class.forName("com.sk89q.worldedit.math.BlockVector3");
+                            java.lang.reflect.Method at = bvClass.getMethod("at", int.class, int.class, int.class);
+                            Object bv = at.invoke(null, x, y, z);
+                            try {
+                                java.lang.reflect.Method containsBV = region.getClass().getMethod("contains", bvClass);
+                                Object res2 = containsBV.invoke(region, bv);
+                                if (res2 instanceof Boolean && (Boolean) res2) return true;
+                            } catch (NoSuchMethodException ex) {
+                                // ignore
+                            }
+                        } catch (ClassNotFoundException cnf) {
+                            // WorldEdit/WorldGuard classes not present in expected package; ignore
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Reflection failed; assume no WG regions match
+            return false;
+        }
+
+        return false;
+    }
     
     @Override
     public void onDisable() {

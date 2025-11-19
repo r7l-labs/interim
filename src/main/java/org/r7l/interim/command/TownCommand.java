@@ -82,6 +82,8 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                 return handleLeave(sender, args);
             case "claim":
                 return handleClaim(sender, args);
+            case "view":
+                return handleView(sender, args);
             case "unclaim":
                 return handleUnclaim(sender, args);
             case "spawn":
@@ -398,6 +400,12 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         
         int chunkX = player.getLocation().getBlockX() >> 4;
         int chunkZ = player.getLocation().getBlockZ() >> 4;
+
+        // Prevent claiming WorldGuard regions
+        if (plugin.isLocationInWorldGuardRegion(player.getLocation())) {
+            player.sendMessage(error("This area is protected by WorldGuard and cannot be claimed."));
+            return true;
+        }
         
         if (dataManager.isClaimed(player.getWorld().getName(), chunkX, chunkZ)) {
             player.sendMessage(error("This chunk is already claimed!"));
@@ -437,6 +445,46 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         
     player.sendMessage(success("Chunk claimed for " + town.getName() + "!"));
         
+        return true;
+    }
+
+    private boolean handleView(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(error("Only players can view claim borders."));
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Town town;
+        if (args.length >= 2) {
+            town = dataManager.getTown(args[1]);
+            if (town == null) {
+                player.sendMessage(error("Town not found!"));
+                return true;
+            }
+        } else {
+            Resident resident = dataManager.getResident(player.getUniqueId());
+            if (resident == null || !resident.hasTown()) {
+                player.sendMessage(error("You are not in a town!"));
+                return true;
+            }
+            town = resident.getTown();
+        }
+
+        java.util.Set<Claim> claims = town.getClaims();
+        if (claims.isEmpty()) {
+            player.sendMessage(info("This town has no claims."));
+            return true;
+        }
+
+        int duration = plugin.getConfig().getInt("town.view-duration-seconds", 15);
+        if (plugin.getParticleManager() != null) {
+            plugin.getParticleManager().showClaimBorders(player, claims, duration);
+            player.sendMessage(success("Showing claim borders for " + town.getName() + " for " + duration + "s."));
+        } else {
+            player.sendMessage(info("Particle effects are disabled on this server."));
+        }
+
         return true;
     }
     
