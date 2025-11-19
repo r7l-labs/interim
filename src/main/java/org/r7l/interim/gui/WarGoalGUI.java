@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * GUI for selecting war goal when declaring war
+ * GUI for selecting the target town when declaring a (kill) war
  */
 public class WarGoalGUI implements InventoryHolder {
     
@@ -31,8 +31,8 @@ public class WarGoalGUI implements InventoryHolder {
         this.player = player;
         this.attacker = attacker;
         this.defender = defender;
-        this.inventory = Bukkit.createInventory(this, 27, 
-            ChatColor.DARK_RED + "Select War Goal");
+        this.inventory = Bukkit.createInventory(this, 54,
+            ChatColor.DARK_RED + "Select Target Town");
         
         buildMenu();
     }
@@ -43,77 +43,37 @@ public class WarGoalGUI implements InventoryHolder {
     }
     
     private void buildMenu() {
-        // Territory Conquest
-        inventory.setItem(10, createItem(Material.GRASS_BLOCK, 
-            ChatColor.GREEN + "Territory Conquest",
-            List.of(
-                ChatColor.GRAY + "Goal: Capture enemy towns",
-                ChatColor.GRAY + "Victory: Control 60% of towns",
-                ChatColor.GRAY + "Bonus: +100 points per town",
-                "",
-                ChatColor.YELLOW + "Click to select!"
-            )));
-        
-        // Economic Dominance
-        inventory.setItem(11, createItem(Material.GOLD_INGOT, 
-            ChatColor.GOLD + "Economic Dominance",
-            List.of(
-                ChatColor.GRAY + "Goal: Plunder enemy resources",
-                ChatColor.GRAY + "Victory: Steal $50,000",
-                ChatColor.GRAY + "Bonus: +50 points per $5000",
-                "",
-                ChatColor.YELLOW + "Click to select!"
-            )));
-        
-        // Political Subjugation
-        inventory.setItem(12, createItem(Material.NETHER_STAR, 
-            ChatColor.LIGHT_PURPLE + "Political Subjugation",
-            List.of(
-                ChatColor.GRAY + "Goal: Force vassalization",
-                ChatColor.GRAY + "Victory: Defeat capital mayor 10x",
-                ChatColor.GRAY + "Bonus: Enemy becomes vassal",
-                "",
-                ChatColor.YELLOW + "Click to select!"
-            )));
-        
-        // Resource Control
-        inventory.setItem(13, createItem(Material.DIAMOND, 
-            ChatColor.AQUA + "Resource Control",
-            List.of(
-                ChatColor.GRAY + "Goal: Control strategic points",
-                ChatColor.GRAY + "Victory: Hold 5 key territories",
-                ChatColor.GRAY + "Bonus: +20 points per hour held",
-                "",
-                ChatColor.YELLOW + "Click to select!"
-            )));
-        
-        // Total War
-        inventory.setItem(14, createItem(Material.TNT, 
-            ChatColor.DARK_RED + "Total War",
-            List.of(
-                ChatColor.GRAY + "Goal: Complete annihilation",
-                ChatColor.GRAY + "Victory: Reach 500 war points",
-                ChatColor.GRAY + "Bonus: All kill/capture points x2",
-                "",
-                ChatColor.YELLOW + "Click to select!"
-            )));
-        
-        // Target info
+        // Header / info
         List<String> targetLore = new ArrayList<>();
         targetLore.add(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━");
-        targetLore.add(ChatColor.GRAY + "Target: " + ChatColor.RED + defender.getName());
-        targetLore.add(ChatColor.GRAY + "Towns: " + ChatColor.WHITE + defender.getTownCount());
-        targetLore.add(ChatColor.GRAY + "Bank: " + ChatColor.GOLD + "$" + String.format("%.2f", defender.getBank()));
+        targetLore.add(ChatColor.GRAY + "Declare a kill-only war against a specific town of:");
+        targetLore.add(ChatColor.RED + defender.getName());
         targetLore.add("");
-        targetLore.add(ChatColor.GRAY + "War Cost: " + ChatColor.GOLD + "$5000");
-        targetLore.add(ChatColor.GRAY + "Daily Upkeep: " + ChatColor.GOLD + "$500");
+        targetLore.add(ChatColor.GRAY + "War Cost: " + ChatColor.GOLD + "$" + plugin.getConfig().getDouble("war.declaration-cost", 5000.0));
+        targetLore.add(ChatColor.GRAY + "Points to Win: " + ChatColor.YELLOW + plugin.getConfig().getInt("war.points-to-win", 500));
         targetLore.add(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━");
-        
-        inventory.setItem(4, createItem(Material.NETHERITE_SWORD, 
+
+        inventory.setItem(4, createItem(Material.NETHERITE_SWORD,
             ChatColor.RED + "War Against " + defender.getName(), targetLore));
-        
+
+        // List defender towns as targets
+        int slot = 10;
+        for (java.util.UUID townId : defender.getTowns()) {
+            var town = plugin.getDataManager().getTown(townId);
+            if (town == null) continue;
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Townspeople: " + ChatColor.WHITE + town.getResidentCount());
+            lore.add(ChatColor.GRAY + "Claims: " + ChatColor.WHITE + town.getClaimCount());
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Click to declare war targeting this town");
+
+            inventory.setItem(slot, createItem(Material.OAK_SIGN, ChatColor.RED + town.getName(), lore));
+            slot++;
+            if (slot >= 44) break;
+        }
+
         // Back button
-        inventory.setItem(22, createItem(Material.ARROW, ChatColor.YELLOW + "← Back", null));
+        inventory.setItem(49, createItem(Material.ARROW, ChatColor.YELLOW + "← Back", null));
     }
     
     private ItemStack createItem(Material material, String name, List<String> lore) {
@@ -134,19 +94,25 @@ public class WarGoalGUI implements InventoryHolder {
             return;
         }
         
-        String warGoal = switch (slot) {
-            case 10 -> "Territory Conquest";
-            case 11 -> "Economic Dominance";
-            case 12 -> "Political Subjugation";
-            case 13 -> "Resource Control";
-            case 14 -> "Total War";
-            default -> null;
-        };
-        
-        if (warGoal != null) {
+        // If back clicked
+        if (slot == 49) {
             player.closeInventory();
-            
-            // Check if nation can afford war
+            new DeclareWarGUI(plugin, player, attacker).open();
+            return;
+        }
+
+        // Town selection slots were placed starting at 10
+        if (slot >= 10 && slot < 54) {
+            int index = slot - 10;
+            java.util.List<java.util.UUID> towns = new java.util.ArrayList<>(defender.getTowns());
+            if (index < 0 || index >= towns.size()) return;
+            java.util.UUID selectedTownId = towns.get(index);
+            var town = plugin.getDataManager().getTown(selectedTownId);
+            if (town == null) return;
+
+            player.closeInventory();
+
+            // Check cost
             double warCost = plugin.getConfig().getDouble("war.declaration-cost", 5000.0);
             if (attacker.getBank() < warCost) {
                 player.sendMessage(ChatColor.RED + "Your nation cannot afford to declare war!");
@@ -154,31 +120,27 @@ public class WarGoalGUI implements InventoryHolder {
                 player.sendMessage(ChatColor.RED + "Bank: " + ChatColor.GOLD + "$" + String.format("%.2f", attacker.getBank()));
                 return;
             }
-            
-            // Create war
+
             double wagerAmount = plugin.getConfig().getDouble("war.minimum-wager", 2000.0);
-            War war = new War(attacker.getUuid(), defender.getUuid(), warGoal, wagerAmount);
+            War war = new War(attacker.getUuid(), defender.getUuid(), "Kill War", wagerAmount);
+            war.setTargetTown(town.getUuid());
             plugin.getDataManager().addWar(war);
-            
-            // Deduct cost
+
             attacker.withdraw(warCost);
-            plugin.getDataManager().saveAll();
-            
-            // Add to enemies
             attacker.addEnemy(defender.getUuid());
             defender.addEnemy(attacker.getUuid());
-            
-            // Announce
+            plugin.getDataManager().saveAll();
+
             String announcement = ChatColor.DARK_RED + "⚔ WAR DECLARED! ⚔\n" +
                 ChatColor.RED + attacker.getName() + ChatColor.GRAY + " has declared war on " +
-                ChatColor.RED + defender.getName() + ChatColor.GRAY + "!\n" +
-                ChatColor.YELLOW + "War Goal: " + ChatColor.WHITE + warGoal;
-            
+                ChatColor.RED + defender.getName() + ChatColor.GRAY + " (target: " + ChatColor.YELLOW + town.getName() + ChatColor.GRAY + ")!\n" +
+                ChatColor.YELLOW + "War Type: " + ChatColor.WHITE + "Kill War";
+
             for (Player online : Bukkit.getOnlinePlayers()) {
                 online.sendMessage(announcement);
             }
-            
-            player.sendMessage(ChatColor.GREEN + "War declared successfully!");
+
+            player.sendMessage(ChatColor.GREEN + "War declared successfully against town: " + town.getName());
             new WarMenuGUI(plugin, player).open();
         }
     }

@@ -952,6 +952,9 @@ public class DataManager {
         json.addProperty("attackerPoints", war.getAttackerPoints());
         json.addProperty("defenderPoints", war.getDefenderPoints());
         json.addProperty("warGoal", war.getWarGoal());
+        if (war.getTargetTown() != null) {
+            json.addProperty("targetTown", war.getTargetTown().toString());
+        }
         json.addProperty("wagerAmount", war.getWagerAmount());
         
         JsonObject killsObject = new JsonObject();
@@ -1022,6 +1025,12 @@ public class DataManager {
         JsonArray capturedTownsArray = json.getAsJsonArray("capturedTowns");
         for (JsonElement element : capturedTownsArray) {
             war.addCapturedTown(UUID.fromString(element.getAsString()));
+        }
+
+        if (json.has("targetTown")) {
+            try {
+                war.setTargetTown(UUID.fromString(json.get("targetTown").getAsString()));
+            } catch (Exception ignored) {}
         }
         
         return war;

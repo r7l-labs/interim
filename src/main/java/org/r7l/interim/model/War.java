@@ -16,6 +16,7 @@ public class War {
     private int defenderPoints;
     private String warGoal;
     private double wagerAmount;
+    private java.util.UUID targetTown; // optional: specific town UUID that is the battle location
     private final Map<UUID, Integer> playerKills; // Player UUID -> kill count
     private final Map<UUID, Integer> playerDeaths; // Player UUID -> death count
     private final Set<UUID> capturedTowns; // Towns captured during war
@@ -34,6 +35,15 @@ public class War {
         this.playerKills = new HashMap<>();
         this.playerDeaths = new HashMap<>();
         this.capturedTowns = new HashSet<>();
+        this.targetTown = null;
+    }
+
+    public java.util.UUID getTargetTown() {
+        return targetTown;
+    }
+
+    public void setTargetTown(java.util.UUID targetTown) {
+        this.targetTown = targetTown;
     }
     
     public UUID getUuid() {

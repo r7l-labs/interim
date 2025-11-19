@@ -74,6 +74,8 @@ war:
   territory-hold-points: 5
   # Points required to win (Total War goal)
   points-to-win: 500
+  # Optional Discord webhook URL to announce auto-ended wars
+  discord-webhook: ""
   # Cooldown in days after losing war before declaring new war
   defeat-cooldown-days: 30
   # Allow wars between allied nations
