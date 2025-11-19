@@ -6,6 +6,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.r7l.interim.gui.ClaimMapGUI;
+import org.r7l.interim.gui.TownNationOverviewGUI;
+import org.r7l.interim.gui.SettingsEditorGUI;
 
 /**
  * Handles interactions with GUI inventories
@@ -19,19 +21,41 @@ public class GUIListener implements Listener {
         }
         
         InventoryHolder holder = event.getInventory().getHolder();
-        
+
+        // Claim map GUI
         if (holder instanceof ClaimMapGUI) {
             event.setCancelled(true); // Prevent item pickup
-            
+
             if (event.getCurrentItem() == null) {
                 return;
             }
-            
+
             Player player = (Player) event.getWhoClicked();
             ClaimMapGUI gui = (ClaimMapGUI) holder;
-            
+
             // Handle the click
             gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Town/Nation overview GUI
+        if (holder instanceof TownNationOverviewGUI) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            Player player = (Player) event.getWhoClicked();
+            TownNationOverviewGUI gui = (TownNationOverviewGUI) holder;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Settings editor GUI
+        if (holder instanceof SettingsEditorGUI) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            Player player = (Player) event.getWhoClicked();
+            SettingsEditorGUI gui = (SettingsEditorGUI) holder;
+            gui.handleClick(player, event.getRawSlot());
+            return;
         }
     }
 }

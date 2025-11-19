@@ -272,11 +272,154 @@ public class DataManager {
     }
     
     public void loadAll() {
-        loadResidents();
-        loadClaims();
+        // Load towns and nations before residents and claims so references can be resolved
         loadTowns();
         loadNations();
+        loadResidents();
+        loadClaims();
         linkData();
+    }
+
+    /**
+     * Attempt a one-time recovery of claims by scanning the claims JSON and
+     * re-attaching claims to towns by UUID. This will try to load town files
+     * from both the current data folder and legacy plugin root locations if
+     * necessary. The method will back up the original claims file before
+     * modifying anything.
+     *
+     * @return a map with recovery statistics: total, recovered, skipped
+     */
+    public Map<String, Integer> recoverClaims() {
+        Map<String, Integer> stats = new HashMap<>();
+        int total = 0;
+        int recovered = 0;
+        int skipped = 0;
+
+        File claimsFile = new File(dataFolder, "claims/claims.json");
+        File pluginFolder = dataFolder.getParentFile();
+        if ((!claimsFile.exists() || claimsFile.length() == 0) && pluginFolder != null) {
+            // try legacy location
+            File legacy = new File(pluginFolder, "claims/claims.json");
+            if (legacy.exists()) claimsFile = legacy;
+        }
+
+        if (!claimsFile.exists()) {
+            stats.put("total", total);
+            stats.put("recovered", recovered);
+            stats.put("skipped", skipped);
+            return stats;
+        }
+
+        // Backup original
+        try {
+            File backup = new File(claimsFile.getParentFile(), "claims_backup_" + System.currentTimeMillis() + ".json");
+            java.nio.file.Files.copy(claimsFile.toPath(), backup.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("Failed to backup claims file before recovery: " + e.getMessage());
+        }
+
+        try (Reader reader = new FileReader(claimsFile)) {
+            JsonArray array = gson.fromJson(reader, JsonArray.class);
+            if (array == null) array = new JsonArray();
+
+            total = array.size();
+
+            for (JsonElement element : array) {
+                if (!element.isJsonObject()) {
+                    skipped++;
+                    continue;
+                }
+                JsonObject claimJson = element.getAsJsonObject();
+
+                String townStr = null;
+                if (claimJson.has("town")) townStr = claimJson.get("town").getAsString();
+                if (townStr == null) {
+                    skipped++;
+                    continue;
+                }
+
+                UUID townUuid;
+                try {
+                    townUuid = UUID.fromString(townStr);
+                } catch (IllegalArgumentException e) {
+                    skipped++;
+                    continue;
+                }
+
+                Town town = getTown(townUuid);
+                if (town == null) {
+                    // Attempt to load town file from data/towns or legacy plugin root
+                    if (loadTownFromFile(townUuid)) {
+                        town = getTown(townUuid);
+                    }
+                }
+
+                if (town == null) {
+                    skipped++;
+                    continue;
+                }
+
+                // Deserialize claim (this will return null only if town missing)
+                Claim claim = deserializeClaim(claimJson);
+                if (claim == null) {
+                    skipped++;
+                    continue;
+                }
+
+                // Avoid duplicates
+                if (isClaimed(claim.getWorldName(), claim.getX(), claim.getZ())) {
+                    skipped++;
+                    continue;
+                }
+
+                addClaim(claim);
+                town.addClaim(claim);
+                recovered++;
+            }
+
+            // Persist recovered claims
+            saveClaims();
+            saveTowns();
+
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("Failed to read claims.json during recovery: " + e.getMessage());
+        }
+
+        stats.put("total", total);
+        stats.put("recovered", recovered);
+        stats.put("skipped", skipped);
+        return stats;
+    }
+
+    /**
+     * Attempt to load a single Town JSON file for the given UUID from the
+     * current data/towns directory or a legacy location. Returns true if the
+     * town was successfully loaded and added to memory.
+     */
+    private boolean loadTownFromFile(UUID uuid) {
+        File townsDir = new File(dataFolder, "towns");
+        File townFile = new File(townsDir, uuid.toString() + ".json");
+        File pluginFolder = dataFolder.getParentFile();
+
+        if ((!townFile.exists() || townFile.length() == 0) && pluginFolder != null) {
+            File legacy = new File(pluginFolder, "towns/" + uuid.toString() + ".json");
+            if (legacy.exists()) townFile = legacy;
+        }
+
+        if (!townFile.exists()) return false;
+
+        try (Reader reader = new FileReader(townFile)) {
+            JsonObject json = gson.fromJson(reader, JsonObject.class);
+            Town town = deserializeTown(json);
+            if (town != null) {
+                addTown(town);
+                return true;
+            }
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("Failed to load town file during recovery: " + e.getMessage());
+        }
+
+        return false;
     }
     
     private void saveTowns() {

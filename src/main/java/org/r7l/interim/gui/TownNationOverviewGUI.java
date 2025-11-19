@@ -26,6 +26,9 @@ public class TownNationOverviewGUI implements InventoryHolder {
     private final Inventory inventory;
     private final Resident resident;
 
+    private final java.util.Map<Integer, java.util.UUID> townSlots = new java.util.HashMap<>();
+    private final java.util.Map<Integer, java.util.UUID> nationSlots = new java.util.HashMap<>();
+
     public TownNationOverviewGUI(Interim plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
@@ -41,6 +44,8 @@ public class TownNationOverviewGUI implements InventoryHolder {
 
     private void buildOverview() {
         int slot = 0;
+        townSlots.clear();
+        nationSlots.clear();
         // Show all towns the player is a member of
         if (resident != null) {
             for (UUID townId : resident.getTowns().keySet()) {
@@ -58,6 +63,7 @@ public class TownNationOverviewGUI implements InventoryHolder {
                 meta.setLore(lore);
                 item.setItemMeta(meta);
                 inventory.setItem(slot++, item);
+                townSlots.put(slot-1, town.getUuid());
             }
         }
         // Show all nations
@@ -78,6 +84,37 @@ public class TownNationOverviewGUI implements InventoryHolder {
             meta.setLore(lore);
             item.setItemMeta(meta);
             inventory.setItem(slot++, item);
+            nationSlots.put(slot-1, nation.getUuid());
+        }
+    }
+
+    /**
+     * Handle click events from GUIListener
+     */
+    public void handleClick(Player player, int rawSlot) {
+        if (townSlots.containsKey(rawSlot)) {
+            java.util.UUID townId = townSlots.get(rawSlot);
+            Town town = plugin.getDataManager().getTown(townId);
+            if (town == null) return;
+
+            Resident resident = plugin.getDataManager().getResident(player.getUniqueId());
+            boolean canEdit = resident != null && (resident.isMayor(town.getUuid()) || resident.isAssistant(town.getUuid()));
+            if (canEdit) {
+                // Open settings editor for this town
+                SettingsEditorGUI settings = new SettingsEditorGUI(plugin, player, town);
+                settings.open();
+            } else {
+                // Show some quick info
+                player.sendMessage(org.bukkit.ChatColor.BLUE + "[Interim] " + org.bukkit.ChatColor.GRAY + "Town: " + town.getName() + " — Members: " + town.getResidentCount() + ", Claims: " + town.getClaimCount());
+            }
+            return;
+        }
+
+        if (nationSlots.containsKey(rawSlot)) {
+            java.util.UUID nationId = nationSlots.get(rawSlot);
+            Nation nation = plugin.getDataManager().getNation(nationId);
+            if (nation == null) return;
+            player.sendMessage(org.bukkit.ChatColor.BLUE + "[Interim] " + org.bukkit.ChatColor.GRAY + "Nation: " + nation.getName() + " — Towns: " + nation.getTowns().size());
         }
     }
 

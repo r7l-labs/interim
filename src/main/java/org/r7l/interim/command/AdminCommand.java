@@ -43,6 +43,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         switch (subCommand) {
             case "town":
                 return handleTownAdmin(sender, args);
+            case "recover":
+                return handleRecover(sender, args);
             case "nation":
                 return handleNationAdmin(sender, args);
             case "resident":
@@ -1073,6 +1075,32 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§aReloaded Interim configuration and data.");
         return true;
     }
+
+    // Recover command - one-time recovery to reattach claims to towns
+    private boolean handleRecover(CommandSender sender, String[] args) {
+        if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
+            sender.sendMessage("§c§lWARNING: This will attempt to modify claim data and create backups.");
+            sender.sendMessage("§cTo confirm, use: /interimadmin recover confirm");
+            return true;
+        }
+
+        sender.sendMessage("§eStarting claim recovery... backups will be created if possible.");
+        Map<String, Integer> stats = dataManager.recoverClaims();
+        int total = stats.getOrDefault("total", 0);
+        int recovered = stats.getOrDefault("recovered", 0);
+        int skipped = stats.getOrDefault("skipped", 0);
+
+        sender.sendMessage("§aClaim recovery complete:");
+        sender.sendMessage("§eTotal scanned: §f" + total);
+        sender.sendMessage("§eRecovered: §f" + recovered);
+        sender.sendMessage("§eSkipped: §f" + skipped);
+
+        Bukkit.getLogger().info("Interim: claim recovery finished. total=" + total + " recovered=" + recovered + " skipped=" + skipped);
+        // Reload data to ensure in-memory state is consistent
+        dataManager.loadAll();
+
+        return true;
+    }
     
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§6=== Interim Admin Commands ===");
@@ -1097,6 +1125,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/interimadmin info <town|nation|player> <name> §7- View detailed info");
         sender.sendMessage("§e/interimadmin purge <towns|nations|residents|all> confirm §7- Purge data");
         sender.sendMessage("§e/interimadmin reload §7- Reload config and data");
+        sender.sendMessage("§e/interimadmin recover confirm §7- Attempt one-time recovery of claims (creates backups)");
     }
     
     @Override
@@ -1108,7 +1137,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload");
+            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload", "recover");
         }
         
         if (args.length == 2) {

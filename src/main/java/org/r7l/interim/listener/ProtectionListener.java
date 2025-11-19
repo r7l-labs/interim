@@ -1,3 +1,91 @@
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        for (Block block : event.getBlocks()) {
+            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
+            Claim toClaim = dataManager.getClaim(block.getLocation());
+            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        for (Block block : event.getBlocks()) {
+            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
+            Claim toClaim = dataManager.getClaim(block.getLocation());
+            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            // Prevent physics from outside claims affecting inside
+            // (e.g., sand/gravel falling, redstone, etc.)
+            // For now, just block physics if block is at border
+            // TODO: Refine for specific block types if needed
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockIgnite(BlockIgniteEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null && event.getCause() == BlockIgniteEvent.IgniteCause.SPREAD) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockBurn(BlockBurnEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockRedstone(BlockRedstoneEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            // Prevent redstone from crossing claim borders
+            event.setNewCurrent(0);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        // Prevent mob griefing (e.g., Enderman, Wither, etc.)
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            event.setCancelled(true);
+        }
+    }
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        // Prevent water/lava flowing from outside into a claim
+        Block toBlock = event.getToBlock();
+        Block fromBlock = event.getBlock();
+        Claim toClaim = dataManager.getClaim(toBlock.getLocation());
+        Claim fromClaim = dataManager.getClaim(fromBlock.getLocation());
+        // If liquid is flowing from wilderness or another claim into a protected claim, block it
+        if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+            event.setCancelled(true);
+        }
+    }
+
+
 package org.r7l.interim.listener;
 
 import org.bukkit.ChatColor;
@@ -21,10 +109,98 @@ import java.util.List;
 public class ProtectionListener implements Listener {
     private final Interim plugin;
     private final DataManager dataManager;
-    
+
     public ProtectionListener(Interim plugin) {
         this.plugin = plugin;
         this.dataManager = plugin.getDataManager();
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        for (Block block : event.getBlocks()) {
+            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
+            Claim toClaim = dataManager.getClaim(block.getLocation());
+            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        for (Block block : event.getBlocks()) {
+            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
+            Claim toClaim = dataManager.getClaim(block.getLocation());
+            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            // Prevent physics from outside claims affecting inside
+            // (e.g., sand/gravel falling, redstone, etc.)
+            // For now, just block physics if block is at border
+            // TODO: Refine for specific block types if needed
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockIgnite(BlockIgniteEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null && event.getCause() == BlockIgniteEvent.IgniteCause.SPREAD) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockBurn(BlockBurnEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockRedstone(BlockRedstoneEvent event) {
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            // Prevent redstone from crossing claim borders
+            event.setNewCurrent(0);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        // Prevent mob griefing (e.g., Enderman, Wither, etc.)
+        Block block = event.getBlock();
+        Claim claim = dataManager.getClaim(block.getLocation());
+        if (claim != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        // Prevent water/lava flowing from outside into a claim
+        Block toBlock = event.getToBlock();
+        Block fromBlock = event.getBlock();
+        Claim toClaim = dataManager.getClaim(toBlock.getLocation());
+        Claim fromClaim = dataManager.getClaim(fromBlock.getLocation());
+        // If liquid is flowing from wilderness or another claim into a protected claim, block it
+        if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
+            event.setCancelled(true);
+        }
     }
     
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -45,7 +221,7 @@ public class ProtectionListener implements Listener {
         
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot break blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage("§9§l[Interim] §7You cannot break blocks in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -67,7 +243,7 @@ public class ProtectionListener implements Listener {
         
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot place blocks in " + claim.getTown().getName() + "!");
+            player.sendMessage("§9§l[Interim] §7You cannot place blocks in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -109,7 +285,7 @@ public class ProtectionListener implements Listener {
         // TODO: Add war logic for 1.0.0 (allow block/mob interaction if at war)
         if (!canInteract(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot interact with that in " + claim.getTown().getName() + "!");
+            player.sendMessage("§9§l[Interim] §7You cannot interact with that in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -146,7 +322,7 @@ public class ProtectionListener implements Listener {
                 // Wilderness - check config
                 if (!plugin.getConfig().getBoolean("protection.wilderness-pvp", true)) {
                     event.setCancelled(true);
-                    attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "PvP is disabled in the wilderness!");
+                    attacker.sendMessage("§9§l[Interim] §7PvP is disabled in the wilderness!");
                 }
                 return;
             }
@@ -156,7 +332,7 @@ public class ProtectionListener implements Listener {
             // Check if PvP is enabled in the town
             if (!town.isPvp()) {
                 event.setCancelled(true);
-                attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "PvP is disabled in " + town.getName() + "!");
+                attacker.sendMessage("§9§l[Interim] §7PvP is disabled in " + town.getName() + "!");
                 return;
             }
             
@@ -172,7 +348,7 @@ public class ProtectionListener implements Listener {
                     // Same town
                     if (attackerTown.equals(victimTown)) {
                         event.setCancelled(true);
-                        attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your town members!");
+                        attacker.sendMessage("§9§l[Interim] §7You cannot attack your town members!");
                         return;
                     }
                     
@@ -183,13 +359,13 @@ public class ProtectionListener implements Listener {
                         
                         if (attackerNation.equals(victimNation)) {
                             event.setCancelled(true);
-                            attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your nation members!");
+                            attacker.sendMessage("§9§l[Interim] §7You cannot attack your nation members!");
                             return;
                         }
-                        
+
                         if (attackerNation.isAlly(victimNation.getUuid())) {
                             event.setCancelled(true);
-                            attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot attack your allies!");
+                            attacker.sendMessage("§9§l[Interim] §7You cannot attack your allies!");
                             return;
                         }
                     }
@@ -203,7 +379,7 @@ public class ProtectionListener implements Listener {
             
             if (claim != null && !canBuild(attacker, claim)) {
                 event.setCancelled(true);
-                attacker.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot damage entities in " + claim.getTown().getName() + "!");
+                attacker.sendMessage("§9§l[Interim] §7You cannot damage entities in " + claim.getTown().getName() + "!");
             }
         }
     }
@@ -224,7 +400,7 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot break that in " + claim.getTown().getName() + "!");
+            player.sendMessage("§9§l[Interim] §7You cannot break that in " + claim.getTown().getName() + "!");
         }
     }
     
@@ -240,23 +416,32 @@ public class ProtectionListener implements Listener {
         
         if (claim != null && !canBuild(player, claim)) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You cannot place that in " + claim.getTown().getName() + "!");
+            player.sendMessage("§9§l[Interim] §7You cannot place that in " + claim.getTown().getName() + "!");
         }
     }
     
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
+        // Prevent explosions outside claims from affecting blocks inside claims
         event.blockList().removeIf(block -> {
             Claim claim = dataManager.getClaim(block.getLocation());
-            return claim != null && !claim.getTown().isExplosions();
+            if (claim == null) return false;
+            // If explosion origin is outside claim, block damage
+            Claim originClaim = dataManager.getClaim(event.getLocation());
+            return !claim.getTown().isExplosions() || (originClaim == null || !originClaim.getTown().equals(claim.getTown()));
         });
     }
     
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
+        // Prevent block explosions outside claims from affecting blocks inside claims
         event.blockList().removeIf(block -> {
             Claim claim = dataManager.getClaim(block.getLocation());
-            return claim != null && !claim.getTown().isExplosions();
+            if (claim == null) return false;
+            Claim originClaim = dataManager.getClaim(event.getBlock().getLocation());
+            return !claim.getTown().isExplosions() || (originClaim == null || !originClaim.getTown().equals(claim.getTown()));
         });
     }
     
@@ -284,8 +469,8 @@ public class ProtectionListener implements Listener {
         // Show invites
         List<Invite> invites = dataManager.getInvites(player.getUniqueId());
         if (!invites.isEmpty()) {
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "You have " + invites.size() + " pending town invite(s)!");
-            player.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "[Interim] " + ChatColor.GRAY + "Type /town invites to view them.");
+            player.sendMessage("§9§l[Interim] §7You have " + invites.size() + " pending town invite(s)!");
+            player.sendMessage("§9§l[Interim] §7Type /town invites to view them.");
         }
     }
     
@@ -321,12 +506,12 @@ public class ProtectionListener implements Listener {
 
         // Show the town/wilderness as a title instead of chat to make it more prominent and avoid repetition
         if (toTown == null) {
-            player.sendTitle(ChatColor.GRAY + "~ Wilderness ~", "", 5, 60, 10);
+            player.sendTitle("§7~ Wilderness ~", "", 5, 60, 10);
         } else {
-            String title = ChatColor.GREEN + toTown.getName();
+            String title = "§a" + toTown.getName();
             String subtitle = "";
             if (toTown.hasNation()) {
-                subtitle = ChatColor.YELLOW + "[" + toTown.getNation().getName() + "]";
+                subtitle = "§e[" + toTown.getNation().getName() + "]";
             }
             player.sendTitle(title, subtitle, 5, 60, 10);
         }

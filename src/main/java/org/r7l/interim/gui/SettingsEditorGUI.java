@@ -8,26 +8,29 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.r7l.interim.Interim;
 import org.r7l.interim.model.Town;
-import org.r7l.interim.model.Nation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * GUI for editing town/nation settings (toggles for PvP, explosions, mob spawning, etc.)
+ * GUI for editing town settings (toggles for PvP, explosions, mob spawning, etc.)
  */
 public class SettingsEditorGUI implements InventoryHolder {
     private final Inventory inventory;
     private final Player player;
     private final Town town;
-    private final Nation nation;
+    private final Interim plugin;
+    private final Map<Integer, String> toggleSlots = new HashMap<>();
 
-    public SettingsEditorGUI(Player player, Town town, Nation nation) {
+    public SettingsEditorGUI(Interim plugin, Player player, Town town) {
+        this.plugin = plugin;
         this.player = player;
         this.town = town;
-        this.nation = nation;
-        this.inventory = Bukkit.createInventory(this, 27, ChatColor.BLUE + "Settings Editor");
+        this.inventory = Bukkit.createInventory(this, 27, ChatColor.BLUE + "Town Settings");
         buildSettings();
     }
 
@@ -37,17 +40,20 @@ public class SettingsEditorGUI implements InventoryHolder {
     }
 
     private void buildSettings() {
-        int slot = 0;
-        if (town != null) {
-            inventory.setItem(slot++, createToggleItem("PvP", town.isPvp()));
-            inventory.setItem(slot++, createToggleItem("Explosions", town.isExplosions()));
-            inventory.setItem(slot++, createToggleItem("Mob Spawning", town.isMobSpawning()));
-            // Add more toggles here as needed
-        }
-        if (nation != null) {
-            inventory.setItem(slot++, createToggleItem("Nation Board", true)); // Example toggle
-            // Add more nation toggles here
-        }
+        toggleSlots.clear();
+        // Use fixed slots for clarity
+        int pvpSlot = 11;
+        int explosionsSlot = 13;
+        int mobsSlot = 15;
+
+        inventory.setItem(pvpSlot, createToggleItem("PvP", town.isPvp()));
+        toggleSlots.put(pvpSlot, "pvp");
+
+        inventory.setItem(explosionsSlot, createToggleItem("Explosions", town.isExplosions()));
+        toggleSlots.put(explosionsSlot, "explosions");
+
+        inventory.setItem(mobsSlot, createToggleItem("Mob Spawning", town.isMobSpawning()));
+        toggleSlots.put(mobsSlot, "mobs");
     }
 
     private ItemStack createToggleItem(String name, boolean enabled) {
@@ -63,5 +69,29 @@ public class SettingsEditorGUI implements InventoryHolder {
 
     public void open() {
         player.openInventory(inventory);
+    }
+
+    public void handleClick(Player clicker, int rawSlot) {
+        if (!clicker.getUniqueId().equals(player.getUniqueId())) return; // only owner player actions
+        if (!toggleSlots.containsKey(rawSlot)) return;
+
+        String key = toggleSlots.get(rawSlot);
+        switch (key) {
+            case "pvp" -> {
+                town.setPvp(!town.isPvp());
+            }
+            case "explosions" -> {
+                town.setExplosions(!town.isExplosions());
+            }
+            case "mobs" -> {
+                town.setMobSpawning(!town.isMobSpawning());
+            }
+        }
+
+        // Persist changes
+        plugin.getDataManager().saveAll();
+
+        // Rebuild to reflect new states
+        buildSettings();
     }
 }
