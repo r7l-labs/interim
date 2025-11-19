@@ -20,6 +20,7 @@ public class DataManager {
     private final Map<UUID, Resident> residents;
     private final Map<String, Claim> claims; // Key: world:x,z
     private final Map<UUID, List<Invite>> invites;
+    private final Map<UUID, War> wars; // Active and past wars
     
     public DataManager(File dataFolder) {
         this.dataFolder = dataFolder;
@@ -35,6 +36,7 @@ public class DataManager {
         this.residents = new HashMap<>();
         this.claims = new HashMap<>();
         this.invites = new HashMap<>();
+        this.wars = new HashMap<>();
         
         // Ensure directories exist and migrate legacy data if present
         createDirectories();
@@ -46,6 +48,7 @@ public class DataManager {
         new File(dataFolder, "nations").mkdirs();
         new File(dataFolder, "residents").mkdirs();
         new File(dataFolder, "claims").mkdirs();
+        new File(dataFolder, "wars").mkdirs();
     }
 
     /**
@@ -263,12 +266,42 @@ public class DataManager {
         invites.remove(playerUuid);
     }
     
+    // War methods
+    public void addWar(War war) {
+        wars.put(war.getUuid(), war);
+    }
+    
+    public void removeWar(War war) {
+        wars.remove(war.getUuid());
+    }
+    
+    public War getWar(UUID uuid) {
+        return wars.get(uuid);
+    }
+    
+    public List<War> getActiveWars() {
+        return wars.values().stream()
+            .filter(War::isActive)
+            .toList();
+    }
+    
+    public List<War> getPastWars() {
+        return wars.values().stream()
+            .filter(w -> !w.isActive())
+            .toList();
+    }
+    
+    public Collection<War> getAllWars() {
+        return new ArrayList<>(wars.values());
+    }
+    
     // Save/Load methods
     public void saveAll() {
         saveTowns();
         saveNations();
         saveResidents();
         saveClaims();
+        saveWars();
     }
     
     public void loadAll() {
@@ -277,6 +310,7 @@ public class DataManager {
         loadNations();
         loadResidents();
         loadClaims();
+        loadWars();
         linkData();
     }
 
@@ -851,5 +885,124 @@ public class DataManager {
                     obj.get("pitch").getAsFloat()
             );
         }
+    }
+    
+    // War serialization
+    private void saveWars() {
+        File warsFile = new File(dataFolder, "wars/wars.json");
+        try (Writer writer = new FileWriter(warsFile)) {
+            JsonArray array = new JsonArray();
+            for (War war : wars.values()) {
+                array.add(serializeWar(war));
+            }
+            gson.toJson(array, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void loadWars() {
+        File warsFile = new File(dataFolder, "wars/wars.json");
+        if (!warsFile.exists()) return;
+        
+        try (Reader reader = new FileReader(warsFile)) {
+            JsonArray array = gson.fromJson(reader, JsonArray.class);
+            if (array != null) {
+                for (JsonElement element : array) {
+                    War war = deserializeWar(element.getAsJsonObject());
+                    if (war != null) {
+                        addWar(war);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private JsonObject serializeWar(War war) {
+        JsonObject json = new JsonObject();
+        json.addProperty("uuid", war.getUuid().toString());
+        json.addProperty("attackerNation", war.getAttackerNation().toString());
+        json.addProperty("defenderNation", war.getDefenderNation().toString());
+        json.addProperty("startTime", war.getStartTime());
+        json.addProperty("endTime", war.getEndTime());
+        json.addProperty("active", war.isActive());
+        json.addProperty("attackerPoints", war.getAttackerPoints());
+        json.addProperty("defenderPoints", war.getDefenderPoints());
+        json.addProperty("warGoal", war.getWarGoal());
+        json.addProperty("wagerAmount", war.getWagerAmount());
+        
+        JsonObject killsObject = new JsonObject();
+        for (Map.Entry<UUID, Integer> entry : war.getPlayerKills().entrySet()) {
+            killsObject.addProperty(entry.getKey().toString(), entry.getValue());
+        }
+        json.add("playerKills", killsObject);
+        
+        JsonObject deathsObject = new JsonObject();
+        for (Map.Entry<UUID, Integer> entry : war.getPlayerDeaths().entrySet()) {
+            deathsObject.addProperty(entry.getKey().toString(), entry.getValue());
+        }
+        json.add("playerDeaths", deathsObject);
+        
+        JsonArray capturedTownsArray = new JsonArray();
+        for (UUID townId : war.getCapturedTowns()) {
+            capturedTownsArray.add(townId.toString());
+        }
+        json.add("capturedTowns", capturedTownsArray);
+        
+        return json;
+    }
+    
+    private War deserializeWar(JsonObject json) {
+        UUID attackerNation = UUID.fromString(json.get("attackerNation").getAsString());
+        UUID defenderNation = UUID.fromString(json.get("defenderNation").getAsString());
+        String warGoal = json.get("warGoal").getAsString();
+        double wagerAmount = json.get("wagerAmount").getAsDouble();
+        
+        War war = new War(attackerNation, defenderNation, warGoal, wagerAmount);
+        
+        // Use reflection to set UUID and other fields
+        try {
+            var uuidField = War.class.getDeclaredField("uuid");
+            uuidField.setAccessible(true);
+            uuidField.set(war, UUID.fromString(json.get("uuid").getAsString()));
+            
+            var startTimeField = War.class.getDeclaredField("startTime");
+            startTimeField.setAccessible(true);
+            startTimeField.set(war, json.get("startTime").getAsLong());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        war.setEndTime(json.get("endTime").getAsLong());
+        war.setActive(json.get("active").getAsBoolean());
+        war.setAttackerPoints(json.get("attackerPoints").getAsInt());
+        war.setDefenderPoints(json.get("defenderPoints").getAsInt());
+        
+        JsonObject killsObject = json.getAsJsonObject("playerKills");
+        for (Map.Entry<String, JsonElement> entry : killsObject.entrySet()) {
+            UUID playerId = UUID.fromString(entry.getKey());
+            int kills = entry.getValue().getAsInt();
+            for (int i = 0; i < kills; i++) {
+                war.addKill(playerId);
+            }
+        }
+        
+        JsonObject deathsObject = json.getAsJsonObject("playerDeaths");
+        for (Map.Entry<String, JsonElement> entry : deathsObject.entrySet()) {
+            UUID playerId = UUID.fromString(entry.getKey());
+            int deaths = entry.getValue().getAsInt();
+            for (int i = 0; i < deaths; i++) {
+                war.addDeath(playerId);
+            }
+        }
+        
+        JsonArray capturedTownsArray = json.getAsJsonArray("capturedTowns");
+        for (JsonElement element : capturedTownsArray) {
+            war.addCapturedTown(UUID.fromString(element.getAsString()));
+        }
+        
+        return war;
     }
 }

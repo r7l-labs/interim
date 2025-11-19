@@ -59,6 +59,7 @@ public class MainMenuGUI implements InventoryHolder {
         inventory.setItem(23, createResidentButton(resident));
         inventory.setItem(24, createSettingsButton(resident));
         inventory.setItem(25, createEconomyButton(resident));
+        inventory.setItem(28, createWarButton());
         
         // Quick actions (bottom row)
         inventory.setItem(38, createQuickAction(Material.COMPASS, ChatColor.AQUA + "Town Spawn", 
@@ -243,6 +244,25 @@ public class MainMenuGUI implements InventoryHolder {
             ChatColor.GOLD + "▶ " + ChatColor.WHITE + "Economy", lore);
     }
     
+    private ItemStack createWarButton() {
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + "Declare war on other nations");
+        lore.add(ChatColor.GRAY + "and manage active conflicts");
+        lore.add("");
+        
+        if (player.hasPermission("interim.war")) {
+            List<org.r7l.interim.model.War> activeWars = plugin.getDataManager().getActiveWars();
+            lore.add(ChatColor.GRAY + "Active Wars: " + ChatColor.RED + activeWars.size());
+            lore.add("");
+            lore.add(ChatColor.GREEN + "Click to open war menu!");
+        } else {
+            lore.add(ChatColor.RED + "Requires: interim.war permission");
+        }
+        
+        return createItem(Material.NETHERITE_SWORD, 
+            ChatColor.RED + "⚔ " + ChatColor.WHITE + "War System", lore);
+    }
+    
     private ItemStack createQuickAction(Material material, String name, String description) {
         return createItem(material, name, List.of(ChatColor.GRAY + description, "", ChatColor.YELLOW + "Click to use!"));
     }
@@ -305,7 +325,17 @@ public class MainMenuGUI implements InventoryHolder {
                     player.closeInventory();
                     new EconomyMenuGUI(plugin, player).open();
                 } else {
-                    player.sendMessage(ChatColor.RED + "You must be in a town to manage economy!");
+                    player.sendMessage(ChatColor.RED + "You must be in a town to access economy!");
+                }
+                break;
+                
+            case 28: // War System
+                if (player.hasPermission("interim.war")) {
+                    player.closeInventory();
+                    new WarMenuGUI(plugin, player).open();
+                } else {
+                    player.sendMessage(ChatColor.RED + "You don't have permission to access the war system!");
+                    player.sendMessage(ChatColor.RED + "Required permission: " + ChatColor.YELLOW + "interim.war");
                 }
                 break;
                 

@@ -1,5 +1,5 @@
 # Interim Configuration
-# Version: dev-0.0.11
+# Version: dev-0.2.0
 
 # Town Settings
 town:
@@ -49,6 +49,33 @@ nation:
   daily-upkeep: 500.0
   # Allow neutral nations (not in any alliance)
   allow-neutral: true
+
+# War Settings
+war:
+  # Enable war system (requires interim.war permission to access)
+  enabled: true
+  # Cost to declare war
+  declaration-cost: 5000.0
+  # Minimum wager amount
+  minimum-wager: 2000.0
+  # Daily upkeep cost for active wars
+  daily-upkeep: 500.0
+  # Maximum war duration in days (auto-ends)
+  max-duration-days: 14
+  # Minimum war duration in days (can't surrender before)
+  min-duration-days: 3
+  # Points for killing enemy player
+  kill-points: 10
+  # Points for capturing enemy town
+  capture-town-points: 50
+  # Points per hour for holding captured territory
+  territory-hold-points: 5
+  # Points required to win (Total War goal)
+  points-to-win: 500
+  # Cooldown in days after losing war before declaring new war
+  defeat-cooldown-days: 30
+  # Allow wars between allied nations
+  allow-allied-war: false
 
 # General Settings
 general:

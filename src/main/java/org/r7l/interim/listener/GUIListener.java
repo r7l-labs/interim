@@ -149,6 +149,78 @@ public class GUIListener implements Listener {
             return;
         }
 
+        // War menu GUI
+        if (holder instanceof WarMenuGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Declare war GUI
+        if (holder instanceof DeclareWarGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // War goal GUI
+        if (holder instanceof WarGoalGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Active wars GUI
+        if (holder instanceof ActiveWarsGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // War detail GUI
+        if (holder instanceof WarDetailGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // War history GUI
+        if (holder instanceof WarHistoryGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // War stats GUI
+        if (holder instanceof WarStatsGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Peace treaty GUI
+        if (holder instanceof PeaceTreatyGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Surrender war GUI
+        if (holder instanceof SurrenderWarGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
         // Town/Nation overview GUI (legacy)
         if (holder instanceof TownNationOverviewGUI gui) {
             event.setCancelled(true);

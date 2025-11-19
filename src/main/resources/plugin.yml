@@ -1,5 +1,5 @@
 name: Interim
-version: 0.1.7
+version: dev-0.2.0
 main: org.r7l.interim.Interim
 api-version: '1.21'
 description: A comprehensive nations, towns, and claiming plugin
@@ -47,3 +47,6 @@ permissions:
   interim.nation.create:
     description: Allow creating nations
     default: true
+  interim.war:
+    description: Access to the war system (declaring war, viewing wars)
+    default: false
