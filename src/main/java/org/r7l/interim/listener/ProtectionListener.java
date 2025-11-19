@@ -1,89 +1,4 @@
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
-        for (Block block : event.getBlocks()) {
-            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
-            Claim toClaim = dataManager.getClaim(block.getLocation());
-            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
-        for (Block block : event.getBlocks()) {
-            Claim fromClaim = dataManager.getClaim(event.getBlock().getLocation());
-            Claim toClaim = dataManager.getClaim(block.getLocation());
-            if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockPhysics(BlockPhysicsEvent event) {
-        Block block = event.getBlock();
-        Claim claim = dataManager.getClaim(block.getLocation());
-        if (claim != null) {
-            // Prevent physics from outside claims affecting inside
-            // (e.g., sand/gravel falling, redstone, etc.)
-            // For now, just block physics if block is at border
-            // TODO: Refine for specific block types if needed
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockIgnite(BlockIgniteEvent event) {
-        Block block = event.getBlock();
-        Claim claim = dataManager.getClaim(block.getLocation());
-        if (claim != null && event.getCause() == BlockIgniteEvent.IgniteCause.SPREAD) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockBurn(BlockBurnEvent event) {
-        Block block = event.getBlock();
-        Claim claim = dataManager.getClaim(block.getLocation());
-        if (claim != null) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockRedstone(BlockRedstoneEvent event) {
-        Block block = event.getBlock();
-        Claim claim = dataManager.getClaim(block.getLocation());
-        if (claim != null) {
-            // Prevent redstone from crossing claim borders
-            event.setNewCurrent(0);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
-        // Prevent mob griefing (e.g., Enderman, Wither, etc.)
-        Block block = event.getBlock();
-        Claim claim = dataManager.getClaim(block.getLocation());
-        if (claim != null) {
-            event.setCancelled(true);
-        }
-    }
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockFromTo(BlockFromToEvent event) {
-        // Prevent water/lava flowing from outside into a claim
-        Block toBlock = event.getToBlock();
-        Block fromBlock = event.getBlock();
-        Claim toClaim = dataManager.getClaim(toBlock.getLocation());
-        Claim fromClaim = dataManager.getClaim(fromBlock.getLocation());
-        // If liquid is flowing from wilderness or another claim into a protected claim, block it
-        if (toClaim != null && (fromClaim == null || !fromClaim.getTown().equals(toClaim.getTown()))) {
-            event.setCancelled(true);
-        }
-    }
+// All event handler methods should be inside the ProtectionListener class below
 
 
 package org.r7l.interim.listener;
@@ -241,6 +156,12 @@ public class ProtectionListener implements Listener {
             return;
         }
         
+        String type = block.getType().name();
+        // Only allow doors and trapdoors to be placed by anyone
+        if (type.contains("DOOR") || type.contains("TRAPDOOR")) {
+            return;
+        }
+        // Block all other block placement for non-members
         if (!canBuild(player, claim)) {
             event.setCancelled(true);
             player.sendMessage("§9§l[Interim] §7You cannot place blocks in " + claim.getTown().getName() + "!");
@@ -264,26 +185,19 @@ public class ProtectionListener implements Listener {
             return;
         }
         
-        // Always allow doors and trapdoors to be opened by anyone
         String type = block.getType().name();
+        // Only allow doors and trapdoors to be opened by anyone
         if (type.contains("DOOR") || type.contains("TRAPDOOR")) {
             return;
         }
-
-        // Check if it's a protected block (container, etc.)
-        if (!isProtectedBlock(block)) {
-            return;
-        }
-
         Claim claim = dataManager.getClaim(block.getLocation());
-
+        
         if (claim == null) {
             // Wilderness - allow
             return;
         }
-
-        // TODO: Add war logic for 1.0.0 (allow block/mob interaction if at war)
-        if (!canInteract(player, claim)) {
+        // Block all other block interaction for non-members
+        if (!canBuild(player, claim)) {
             event.setCancelled(true);
             player.sendMessage("§9§l[Interim] §7You cannot interact with that in " + claim.getTown().getName() + "!");
         }
@@ -317,24 +231,8 @@ public class ProtectionListener implements Listener {
             Player victim = (Player) damaged;
             
             Claim claim = dataManager.getClaim(victim.getLocation());
-            
-            if (claim == null) {
-                // Wilderness - check config
-                if (!plugin.getConfig().getBoolean("protection.wilderness-pvp", true)) {
-                    event.setCancelled(true);
-                    attacker.sendMessage("§9§l[Interim] §7PvP is disabled in the wilderness!");
-                }
-                return;
-            }
-            
-            Town town = claim.getTown();
-            
-            // Check if PvP is enabled in the town
-            if (!town.isPvp()) {
-                event.setCancelled(true);
-                attacker.sendMessage("§9§l[Interim] §7PvP is disabled in " + town.getName() + "!");
-                return;
-            }
+            // Allow PvP everywhere regardless of town or wilderness toggle
+            // (we still enforce same-town and nation/ally protections below)
             
             // Check nation relations
             Resident attackerResident = dataManager.getResident(attacker.getUniqueId());
@@ -348,7 +246,7 @@ public class ProtectionListener implements Listener {
                     // Same town
                     if (attackerTown.equals(victimTown)) {
                         event.setCancelled(true);
-                        attacker.sendMessage("§9§l[Interim] §7You cannot attack your town members!");
+                        attacker.sendMessage(plugin.error("You cannot attack your town members!"));
                         return;
                     }
                     
@@ -359,13 +257,13 @@ public class ProtectionListener implements Listener {
                         
                         if (attackerNation.equals(victimNation)) {
                             event.setCancelled(true);
-                            attacker.sendMessage("§9§l[Interim] §7You cannot attack your nation members!");
+                            attacker.sendMessage(plugin.error("You cannot attack your nation members!"));
                             return;
                         }
 
                         if (attackerNation.isAlly(victimNation.getUuid())) {
                             event.setCancelled(true);
-                            attacker.sendMessage("§9§l[Interim] §7You cannot attack your allies!");
+                            attacker.sendMessage(plugin.error("You cannot attack your allies!"));
                             return;
                         }
                     }
@@ -379,7 +277,7 @@ public class ProtectionListener implements Listener {
             
             if (claim != null && !canBuild(attacker, claim)) {
                 event.setCancelled(true);
-                attacker.sendMessage("§9§l[Interim] §7You cannot damage entities in " + claim.getTown().getName() + "!");
+                attacker.sendMessage(plugin.error("You cannot damage entities in " + claim.getTown().getName() + "!"));
             }
         }
     }
@@ -481,16 +379,28 @@ public class ProtectionListener implements Listener {
         if (resident != null) {
             resident.setOnline(false);
         }
+        // Cancel any active teleport and refund if necessary
+        plugin.cancelTeleportSession(player.getUniqueId(), true, "You disconnected");
     }
+
+    
     
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+        // If player has an active teleport and they moved to a different block, cancel and refund
+        Player player = event.getPlayer();
+        if (plugin.hasActiveTeleport(player.getUniqueId())) {
+            if (!event.getFrom().getBlock().equals(event.getTo().getBlock())) {
+                plugin.cancelTeleportSession(player.getUniqueId(), true, "You moved");
+                return;
+            }
+        }
+
         // Only check if player moved to a different chunk
         if (event.getFrom().getChunk().equals(event.getTo().getChunk())) {
             return;
         }
-        
-        Player player = event.getPlayer();
+
         Claim fromClaim = dataManager.getClaim(event.getFrom());
         Claim toClaim = dataManager.getClaim(event.getTo());
         

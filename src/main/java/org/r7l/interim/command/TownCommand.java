@@ -1,11 +1,17 @@
 package org.r7l.interim.command;
 
-import org.bukkit.ChatColor;
+// chat color constants deprecated; use Interim messaging helpers instead
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.boss.BossBar;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.ChatColor;
 import org.r7l.interim.Interim;
 import org.r7l.interim.model.*;
 import org.r7l.interim.storage.DataManager;
@@ -20,6 +26,38 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     public TownCommand(Interim plugin) {
         this.plugin = plugin;
         this.dataManager = plugin.getDataManager();
+    }
+
+    // convenience wrappers to centralize message formatting
+    private String pref(String msg) { return plugin.pref(msg); }
+    private String success(String msg) { return plugin.success(msg); }
+    private String error(String msg) { return plugin.error(msg); }
+    private String info(String msg) { return plugin.info(msg); }
+
+    // Check whether removing a claim would disconnect the town's claims
+    private boolean wouldDisconnect(Town town, Claim remove) {
+        List<Claim> remaining = new ArrayList<>();
+        for (Claim c : town.getClaims()) {
+            if (!c.equals(remove)) remaining.add(c);
+        }
+        if (remaining.isEmpty()) return false;
+
+        Set<Claim> visited = new HashSet<>();
+        Deque<Claim> stack = new ArrayDeque<>();
+        stack.push(remaining.get(0));
+        visited.add(remaining.get(0));
+
+        while (!stack.isEmpty()) {
+            Claim cur = stack.pop();
+            for (Claim n : remaining) {
+                if (!visited.contains(n) && cur.isAdjacentTo(n)) {
+                    visited.add(n);
+                    stack.push(n);
+                }
+            }
+        }
+
+        return visited.size() != remaining.size();
     }
     
     @Override
@@ -66,6 +104,10 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                 return handleBoard(sender, args);
             case "rename":
                 return handleRename(sender, args);
+            case "accept":
+                return handleAccept(sender, args);
+            case "deny":
+                return handleDeny(sender, args);
             default:
                 sendHelp(sender);
                 return true;
@@ -74,14 +116,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleCreate(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can create towns.");
+            sender.sendMessage(error("Only players can create towns."));
             return true;
         }
         
         Player player = (Player) sender;
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town create <name>");
+            player.sendMessage(error("Usage: /town create <name>"));
             return true;
         }
         
@@ -92,29 +134,29 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         int maxLength = plugin.getConfig().getInt("town.max-name-length", 32);
         
         if (townName.length() < minLength || townName.length() > maxLength) {
-            player.sendMessage(ChatColor.RED + "Town name must be between " + minLength + " and " + maxLength + " characters.");
+            player.sendMessage(error("Town name must be between " + minLength + " and " + maxLength + " characters."));
             return true;
         }
         
         if (!townName.matches("[a-zA-Z0-9_]+")) {
-            player.sendMessage(ChatColor.RED + "Town name can only contain letters, numbers, and underscores.");
+            player.sendMessage(error("Town name can only contain letters, numbers, and underscores."));
             return true;
         }
         
         // Check if town name is taken
         if (dataManager.townExists(townName)) {
-            player.sendMessage(ChatColor.RED + "A town with that name already exists!");
+            player.sendMessage(error("A town with that name already exists!"));
             return true;
         }
         
         // Check economy
         double cost = plugin.getConfig().getDouble("town.creation-cost", 1000.0);
         if (plugin.getEconomy() != null && !plugin.getEconomy().has(player, cost)) {
-            player.sendMessage(ChatColor.RED + "You need " + cost + " to create a town!");
+            player.sendMessage(error("You need " + cost + " to create a town!"));
             return true;
         }
         
-        // Create town
+    // Create town
         Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
         Town town = new Town(townName, player.getUniqueId());
         dataManager.addTown(town);
@@ -125,13 +167,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             plugin.getEconomy().withdrawPlayer(player, cost);
         }
         
-        player.sendMessage(ChatColor.GREEN + "Town '" + townName + "' has been created!");
+        // Set the town spawn at the player's location and start particles
+        town.setSpawn(player.getLocation());
+        if (plugin.getParticleManager() != null) {
+            plugin.getParticleManager().startParticleEffect(town);
+        }
+
+        player.sendMessage(success("Town '" + townName + "' has been created!"));
+
+        // Auto-claim the chunk where the player is standing
+            int chunkX = player.getLocation().getBlockX() >> 4;
+            int chunkZ = player.getLocation().getBlockZ() >> 4;
+            if (!dataManager.isClaimed(player.getWorld().getName(), chunkX, chunkZ)) {
+                Claim claim = new Claim(player.getLocation().getChunk(), town);
+                dataManager.addClaim(claim);
+                town.addClaim(claim);
+                player.sendMessage(success("Starting chunk claimed for " + town.getName() + "!"));
+            }
+        // Broadcast creation to server with a pretty message
+        Bukkit.getServer().broadcastMessage(plugin.success("Town '" + town.getName() + "' has been created by " + player.getName() + "!"));
         return true;
     }
     
     private boolean handleDelete(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can delete towns.");
+            sender.sendMessage(error("Only players can delete towns."));
             return true;
         }
         
@@ -139,20 +199,20 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!town.getMayor().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "Only the mayor can delete the town!");
+            player.sendMessage(error("Only the mayor can delete the town!"));
             return true;
         }
         
         if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
-            player.sendMessage(ChatColor.YELLOW + "Are you sure you want to delete " + town.getName() + "?");
-            player.sendMessage(ChatColor.YELLOW + "Type '/town delete confirm' to confirm.");
+            player.sendMessage(info("Are you sure you want to delete " + town.getName() + "?"));
+            player.sendMessage(info("Type '/town delete confirm' to confirm."));
             return true;
         }
         
@@ -179,13 +239,15 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         
         dataManager.removeTown(town);
-        player.sendMessage(ChatColor.GREEN + "Town has been deleted!");
+        player.sendMessage(success("Town has been deleted!"));
+        // Broadcast deletion
+        Bukkit.getServer().broadcastMessage(plugin.info("Town '" + town.getName() + "' has been deleted by " + player.getName() + "!"));
         return true;
     }
     
     private boolean handleInvite(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can invite to towns.");
+            sender.sendMessage(error("Only players can invite to towns."));
             return true;
         }
         
@@ -193,31 +255,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to invite players!");
+            player.sendMessage(error("You don't have permission to invite players!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town invite <player>");
+            player.sendMessage(error("Usage: /town invite <player>"));
             return true;
         }
         
         Player target = plugin.getServer().getPlayer(args[1]);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found!");
+            player.sendMessage(error("Player not found!"));
             return true;
         }
         
         Resident targetResident = dataManager.getOrCreateResident(target.getUniqueId(), target.getName());
         if (targetResident.isInTown(town)) {
-            player.sendMessage(ChatColor.RED + "That player is already in this town!");
+            player.sendMessage(error("That player is already in this town!"));
             return true;
         }
         
@@ -225,9 +287,9 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Invite invite = new Invite(town.getUuid(), town.getName(), player.getUniqueId(), player.getName(), 300000); // 5 minutes
         dataManager.addInvite(target.getUniqueId(), invite);
         
-        player.sendMessage(ChatColor.GREEN + "Invited " + target.getName() + " to " + town.getName() + "!");
-        target.sendMessage(ChatColor.GREEN + "You have been invited to " + town.getName() + " by " + player.getName() + "!");
-        target.sendMessage(ChatColor.YELLOW + "Type '/town accept " + town.getName() + "' to accept or '/town deny " + town.getName() + "' to deny.");
+    player.sendMessage(success("Invited " + target.getName() + " to " + town.getName() + "!"));
+    target.sendMessage(success("You have been invited to " + town.getName() + " by " + player.getName() + "!"));
+    target.sendMessage(info("Type '/town accept " + town.getName() + "' to accept or '/town deny " + town.getName() + "' to deny."));
         
         return true;
     }
@@ -242,51 +304,51 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to kick players!");
+            player.sendMessage(error("You don't have permission to kick players!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town kick <player>");
+            player.sendMessage(error("Usage: /town kick <player>"));
             return true;
         }
         
         Player target = plugin.getServer().getPlayer(args[1]);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found!");
+            player.sendMessage(error("Player not found!"));
             return true;
         }
         
         if (target.getUniqueId().equals(town.getMayor())) {
-            player.sendMessage(ChatColor.RED + "You cannot kick the mayor!");
+            player.sendMessage(error("You cannot kick the mayor!"));
             return true;
         }
         
         Resident targetResident = dataManager.getResident(target.getUniqueId());
         if (targetResident == null || !targetResident.isInTown(town)) {
-            player.sendMessage(ChatColor.RED + "That player is not in your town!");
+            player.sendMessage(error("That player is not in your town!"));
             return true;
         }
         
-        town.removeResident(target.getUniqueId());
-        targetResident.removeTown(town);
-        
-        player.sendMessage(ChatColor.GREEN + "Kicked " + target.getName() + " from the town!");
-        target.sendMessage(ChatColor.RED + "You have been kicked from " + town.getName() + "!");
+    town.removeResident(target.getUniqueId());
+    targetResident.removeTown(town);
+
+    player.sendMessage(success("Kicked " + target.getName() + " from the town!"));
+    target.sendMessage(error("You have been kicked from " + town.getName() + "!"));
         
         return true;
     }
     
     private boolean handleLeave(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can leave towns.");
+            sender.sendMessage(error("Only players can leave towns."));
             return true;
         }
         
@@ -294,28 +356,28 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (town.getMayor().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "The mayor cannot leave! Use /town delete to delete the town.");
+            player.sendMessage(error("The mayor cannot leave! Use /town delete to delete the town."));
             return true;
         }
         
         town.removeResident(player.getUniqueId());
         resident.removeTown(town);
         
-        player.sendMessage(ChatColor.GREEN + "You have left " + town.getName() + "!");
+    player.sendMessage(success("You have left " + town.getName() + "!"));
         
         return true;
     }
     
     private boolean handleClaim(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can claim chunks.");
+            sender.sendMessage(error("Only players can claim chunks."));
             return true;
         }
         
@@ -323,14 +385,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to claim chunks!");
+            player.sendMessage(error("You don't have permission to claim chunks!"));
             return true;
         }
         
@@ -338,19 +400,34 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         int chunkZ = player.getLocation().getBlockZ() >> 4;
         
         if (dataManager.isClaimed(player.getWorld().getName(), chunkX, chunkZ)) {
-            player.sendMessage(ChatColor.RED + "This chunk is already claimed!");
+            player.sendMessage(error("This chunk is already claimed!"));
             return true;
         }
+            // Prevent disconnected claims: must be adjacent to an existing claim
+            boolean isAdjacent = false;
+            for (Claim c : town.getClaims()) {
+                if (c.getWorldName().equals(player.getWorld().getName())) {
+                    if ((Math.abs(c.getX() - chunkX) == 1 && c.getZ() == chunkZ) ||
+                        (Math.abs(c.getZ() - chunkZ) == 1 && c.getX() == chunkX)) {
+                        isAdjacent = true;
+                        break;
+                    }
+                }
+            }
+            if (town.getClaimCount() > 0 && !isAdjacent) {
+                player.sendMessage(error("You can only claim chunks adjacent to your town's existing claims!"));
+                return true;
+            }
         
         int maxClaims = plugin.getConfig().getInt("town.max-claims", 100);
         if (town.getClaimCount() >= maxClaims) {
-            player.sendMessage(ChatColor.RED + "Your town has reached the maximum number of claims!");
+            player.sendMessage(error("Your town has reached the maximum number of claims!"));
             return true;
         }
         
         double cost = plugin.getConfig().getDouble("town.claim-cost", 100.0);
         if (plugin.getEconomy() != null && !town.withdraw(cost)) {
-            player.sendMessage(ChatColor.RED + "Your town doesn't have enough money! Need: " + cost);
+            player.sendMessage(error("Your town doesn't have enough money! Need: " + cost));
             return true;
         }
         
@@ -358,14 +435,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         dataManager.addClaim(claim);
         town.addClaim(claim);
         
-        player.sendMessage(ChatColor.GREEN + "Chunk claimed for " + town.getName() + "!");
+    player.sendMessage(success("Chunk claimed for " + town.getName() + "!"));
         
         return true;
     }
     
     private boolean handleUnclaim(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can unclaim chunks.");
+            sender.sendMessage(error("Only players can unclaim chunks."));
             return true;
         }
         
@@ -373,34 +450,40 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to unclaim chunks!");
+            player.sendMessage(error("You don't have permission to unclaim chunks!"));
             return true;
         }
         
         Claim claim = dataManager.getClaim(player.getLocation());
         if (claim == null || !claim.getTown().equals(town)) {
-            player.sendMessage(ChatColor.RED + "This chunk is not claimed by your town!");
+            player.sendMessage(error("This chunk is not claimed by your town!"));
             return true;
         }
-        
+
+        // Prevent disconnecting the town's claims
+        if (wouldDisconnect(town, claim)) {
+            player.sendMessage(error("You cannot unclaim that chunk because it would disconnect your town's territory!"));
+            return true;
+        }
+
         dataManager.removeClaim(claim);
         town.removeClaim(claim);
-        
-        player.sendMessage(ChatColor.GREEN + "Chunk unclaimed!");
+
+        player.sendMessage(success("Chunk unclaimed!"));
         
         return true;
     }
     
     private boolean handleSpawn(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can teleport.");
+            sender.sendMessage(error("Only players can teleport."));
             return true;
         }
         
@@ -410,32 +493,53 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 2) {
             town = dataManager.getTown(args[1]);
             if (town == null) {
-                player.sendMessage(ChatColor.RED + "Town not found!");
+                player.sendMessage(error("Town not found!"));
                 return true;
             }
         } else {
             Resident resident = dataManager.getResident(player.getUniqueId());
             if (resident == null || !resident.hasTown()) {
-                player.sendMessage(ChatColor.RED + "You are not in a town!");
+                player.sendMessage(error("You are not in a town!"));
                 return true;
             }
             town = resident.getTown();
         }
         
         if (town.getSpawn() == null) {
-            player.sendMessage(ChatColor.RED + "That town doesn't have a spawn set!");
+            player.sendMessage(error("That town doesn't have a spawn set!"));
             return true;
         }
-        
-        player.teleport(town.getSpawn());
-        player.sendMessage(ChatColor.GREEN + "Teleported to " + town.getName() + " spawn!");
-        
+
+        double cost = plugin.getConfig().getDouble("town.teleport-cost", 200.0);
+        int delaySeconds = plugin.getConfig().getInt("town.teleport-delay-seconds", 15);
+
+        // If player is teleporting to their own town, make it free
+        Resident caller = dataManager.getResident(player.getUniqueId());
+        boolean isOwnTown = caller != null && caller.hasTown() && caller.getTown().equals(town);
+        if (isOwnTown) {
+            cost = 0.0;
+        }
+
+        // Check economy if cost > 0
+        if (cost > 0.0 && plugin.getEconomy() != null && !plugin.getEconomy().has(player, cost)) {
+            player.sendMessage(error("You need " + cost + " to teleport to that town!"));
+            return true;
+        }
+
+        // Charge player now (no refund on cancel) if applicable
+        if (cost > 0.0 && plugin.getEconomy() != null) {
+            plugin.getEconomy().withdrawPlayer(player, cost);
+        }
+
+        // Start managed teleport session (handles bossbar, cancellation, refund)
+        plugin.startTeleportSession(player, town, cost, delaySeconds);
+
         return true;
     }
     
     private boolean handleSetSpawn(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can set spawns.");
+            sender.sendMessage(error("Only players can set spawns."));
             return true;
         }
         
@@ -443,20 +547,20 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to set the spawn!");
+            player.sendMessage(error("You don't have permission to set the spawn!"));
             return true;
         }
         
         Claim claim = dataManager.getClaim(player.getLocation());
         if (claim == null || !claim.getTown().equals(town)) {
-            player.sendMessage(ChatColor.RED + "You can only set spawn in your town's territory!");
+            player.sendMessage(error("You can only set spawn in your town's territory!"));
             return true;
         }
         
@@ -467,14 +571,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             plugin.getParticleManager().refreshParticleEffect(town);
         }
         
-        player.sendMessage(ChatColor.GREEN + "Town spawn has been set!");
+    player.sendMessage(success("Town spawn has been set!"));
         
         return true;
     }
     
     private boolean handleDeposit(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can deposit money.");
+            sender.sendMessage(error("Only players can deposit money."));
             return true;
         }
         
@@ -482,12 +586,12 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town deposit <amount>");
+            player.sendMessage(error("Usage: /town deposit <amount>"));
             return true;
         }
         
@@ -495,31 +599,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         try {
             amount = Double.parseDouble(args[1]);
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.RED + "Invalid amount!");
+            player.sendMessage(error("Invalid amount!"));
             return true;
         }
         
         if (amount <= 0) {
-            player.sendMessage(ChatColor.RED + "Amount must be positive!");
+            player.sendMessage(error("Amount must be positive!"));
             return true;
         }
         
         if (plugin.getEconomy() == null || !plugin.getEconomy().has(player, amount)) {
-            player.sendMessage(ChatColor.RED + "You don't have enough money!");
+            player.sendMessage(error("You don't have enough money!"));
             return true;
         }
         
         plugin.getEconomy().withdrawPlayer(player, amount);
         resident.getTown().deposit(amount);
         
-        player.sendMessage(ChatColor.GREEN + "Deposited " + amount + " to the town bank!");
+    player.sendMessage(success("Deposited " + amount + " to the town bank!"));
         
         return true;
     }
     
     private boolean handleWithdraw(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can withdraw money.");
+            sender.sendMessage(error("Only players can withdraw money."));
             return true;
         }
         
@@ -527,19 +631,19 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Resident resident = dataManager.getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You are not in a town!");
+            player.sendMessage(error("You are not in a town!"));
             return true;
         }
         
         Town town = resident.getTown();
         
         if (!resident.isMayor()) {
-            player.sendMessage(ChatColor.RED + "Only the mayor can withdraw money!");
+            player.sendMessage(error("Only the mayor can withdraw money!"));
             return true;
         }
         
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /town withdraw <amount>");
+            player.sendMessage(error("Usage: /town withdraw <amount>"));
             return true;
         }
         
@@ -547,17 +651,17 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         try {
             amount = Double.parseDouble(args[1]);
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.RED + "Invalid amount!");
+            player.sendMessage(error("Invalid amount!"));
             return true;
         }
         
         if (amount <= 0) {
-            player.sendMessage(ChatColor.RED + "Amount must be positive!");
+            player.sendMessage(error("Amount must be positive!"));
             return true;
         }
         
         if (!town.withdraw(amount)) {
-            player.sendMessage(ChatColor.RED + "The town doesn't have enough money!");
+            player.sendMessage(error("The town doesn't have enough money!"));
             return true;
         }
         
@@ -565,7 +669,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             plugin.getEconomy().depositPlayer(player, amount);
         }
         
-        player.sendMessage(ChatColor.GREEN + "Withdrew " + amount + " from the town bank!");
+    player.sendMessage(success("Withdrew " + amount + " from the town bank!"));
         
         return true;
     }
@@ -605,6 +709,16 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.YELLOW + "Open: " + (town.isOpen() ? "Yes" : "No"));
         sender.sendMessage(ChatColor.YELLOW + "PvP: " + (town.isPvp() ? "Enabled" : "Disabled"));
         
+        // If sender is a player, also show the town board as a subtitle
+        if (sender instanceof Player) {
+            Player p = (Player) sender;
+            String board = town.getBoard();
+            if (board != null && !board.isEmpty()) {
+                // fadeIn 10 ticks, stay 60 ticks, fadeOut 10 ticks
+                p.sendTitle("", board, 10, 60, 10);
+            }
+        }
+
         return true;
     }
     
@@ -823,32 +937,106 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         return true;
     }
     
+    private boolean handleAccept(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can accept invites.");
+            return true;
+        }
+        Player player = (Player) sender;
+        List<Invite> invites = dataManager.getInvites(player.getUniqueId());
+        if (invites.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "You have no pending invites.");
+            return true;
+        }
+        String townName = args.length > 1 ? args[1] : null;
+        Invite invite = null;
+        if (townName != null) {
+            for (Invite i : invites) {
+                if (i.getTownName().equalsIgnoreCase(townName)) {
+                    invite = i;
+                    break;
+                }
+            }
+        } else {
+            invite = invites.get(0);
+        }
+        if (invite == null) {
+            player.sendMessage(ChatColor.RED + "No invite found for that town.");
+            return true;
+        }
+        Town town = dataManager.getTown(invite.getTownName());
+        if (town == null) {
+            player.sendMessage(ChatColor.RED + "That town no longer exists.");
+            dataManager.removeInvite(player.getUniqueId(), invite);
+            return true;
+        }
+        Resident resident = dataManager.getOrCreateResident(player.getUniqueId(), player.getName());
+        resident.addTown(town, TownRank.RESIDENT, true);
+        dataManager.removeInvite(player.getUniqueId(), invite);
+        player.sendMessage(ChatColor.GREEN + "You have joined " + town.getName() + "!");
+        return true;
+    }
+
+    private boolean handleDeny(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can deny invites.");
+            return true;
+        }
+        Player player = (Player) sender;
+        List<Invite> invites = dataManager.getInvites(player.getUniqueId());
+        if (invites.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "You have no pending invites.");
+            return true;
+        }
+        String townName = args.length > 1 ? args[1] : null;
+        Invite invite = null;
+        if (townName != null) {
+            for (Invite i : invites) {
+                if (i.getTownName().equalsIgnoreCase(townName)) {
+                    invite = i;
+                    break;
+                }
+            }
+        } else {
+            invite = invites.get(0);
+        }
+        if (invite == null) {
+            player.sendMessage(ChatColor.RED + "No invite found for that town.");
+            return true;
+        }
+        dataManager.removeInvite(player.getUniqueId(), invite);
+        player.sendMessage(ChatColor.YELLOW + "You have denied the invite to " + invite.getTownName() + ".");
+        return true;
+    }
+    
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "=== Town Commands ===");
-        sender.sendMessage(ChatColor.YELLOW + "/town create <name> - Create a town");
-        sender.sendMessage(ChatColor.YELLOW + "/town delete - Delete your town");
-        sender.sendMessage(ChatColor.YELLOW + "/town invite <player> - Invite a player");
-        sender.sendMessage(ChatColor.YELLOW + "/town kick <player> - Kick a player");
-        sender.sendMessage(ChatColor.YELLOW + "/town leave - Leave your town");
-        sender.sendMessage(ChatColor.YELLOW + "/town claim - Claim a chunk");
-        sender.sendMessage(ChatColor.YELLOW + "/town unclaim - Unclaim a chunk");
-        sender.sendMessage(ChatColor.YELLOW + "/town spawn [town] - Teleport to town spawn");
-        sender.sendMessage(ChatColor.YELLOW + "/town setspawn - Set town spawn");
-        sender.sendMessage(ChatColor.YELLOW + "/town deposit <amount> - Deposit money");
-        sender.sendMessage(ChatColor.YELLOW + "/town withdraw <amount> - Withdraw money");
-        sender.sendMessage(ChatColor.YELLOW + "/town info [town] - View town info");
-        sender.sendMessage(ChatColor.YELLOW + "/town list - List all towns");
-        sender.sendMessage(ChatColor.YELLOW + "/town toggle <option> - Toggle settings");
-        sender.sendMessage(ChatColor.YELLOW + "/town rank <player> <rank> - Set player rank");
-        sender.sendMessage(ChatColor.YELLOW + "/town board <message> - Set town board");
-        sender.sendMessage(ChatColor.YELLOW + "/town rename <name> - Rename town");
+    sender.sendMessage(plugin.pref("=== Town Commands ==="));
+    sender.sendMessage(plugin.info("/town create <name> - Create a town"));
+    sender.sendMessage(plugin.info("/town delete - Delete your town"));
+    sender.sendMessage(plugin.info("/town invite <player> - Invite a player"));
+    sender.sendMessage(plugin.info("/town kick <player> - Kick a player"));
+    sender.sendMessage(plugin.info("/town leave - Leave your town"));
+    sender.sendMessage(plugin.info("/town claim - Claim a chunk"));
+    sender.sendMessage(plugin.info("/town unclaim - Unclaim a chunk"));
+    sender.sendMessage(plugin.info("/town spawn [town] - Teleport to town spawn"));
+    sender.sendMessage(plugin.info("/town setspawn - Set town spawn"));
+    sender.sendMessage(plugin.info("/town deposit <amount> - Deposit money"));
+    sender.sendMessage(plugin.info("/town withdraw <amount> - Withdraw money"));
+    sender.sendMessage(plugin.info("/town info [town] - View town info"));
+    sender.sendMessage(plugin.info("/town list - List all towns"));
+    sender.sendMessage(plugin.info("/town toggle <option> - Toggle settings"));
+    sender.sendMessage(plugin.info("/town rank <player> <rank> - Set player rank"));
+    sender.sendMessage(plugin.info("/town board <message> - Set town board"));
+    sender.sendMessage(plugin.info("/town rename <name> - Rename town"));
+    sender.sendMessage(plugin.info("/town accept <town> - Accept a town invite"));
+    sender.sendMessage(plugin.info("/town deny <town> - Deny a town invite"));
     }
     
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             return Arrays.asList("create", "delete", "invite", "kick", "leave", "claim", "unclaim",
-                    "spawn", "setspawn", "deposit", "withdraw", "info", "list", "toggle", "rank", "board", "rename")
+                    "spawn", "setspawn", "deposit", "withdraw", "info", "list", "toggle", "rank", "board", "rename", "accept", "deny")
                     .stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());

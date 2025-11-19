@@ -1,7 +1,7 @@
 package org.r7l.interim.gui;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+// Avoid ChatColor (deprecated) — use section color codes where necessary
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -16,6 +16,10 @@ import org.r7l.interim.model.Town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 
 /**
  * Interactive GUI map showing claimed chunks around the player
@@ -45,8 +49,8 @@ public class ClaimMapGUI implements InventoryHolder {
         this.centerChunkZ = player.getLocation().getChunk().getZ();
         this.worldName = player.getWorld().getName();
         
-        this.inventory = Bukkit.createInventory(this, TOTAL_SLOTS, 
-            ChatColor.DARK_GREEN + "Claim Map " + ChatColor.GRAY + "(" + centerChunkX + ", " + centerChunkZ + ")");
+        this.inventory = Bukkit.createInventory(this, TOTAL_SLOTS,
+            "§2Claim Map §7(" + centerChunkX + ", " + centerChunkZ + ")");
         
         buildMap();
     }
@@ -98,29 +102,28 @@ public class ClaimMapGUI implements InventoryHolder {
             ItemMeta meta = item.getItemMeta();
             
             if (isPlayerChunk) {
-                meta.setDisplayName(ChatColor.YELLOW + "» " + ChatColor.WHITE + 
-                    "Chunk [" + chunkX + ", " + chunkZ + "]" + ChatColor.YELLOW + " «");
+                meta.setDisplayName("§e» §fChunk [" + chunkX + ", " + chunkZ + "]§e «");
             } else {
-                meta.setDisplayName(ChatColor.WHITE + "Chunk [" + chunkX + ", " + chunkZ + "]");
+                meta.setDisplayName("§fChunk [" + chunkX + ", " + chunkZ + "]");
             }
-            
-            lore.add(ChatColor.GRAY + "Owner: " + ChatColor.GREEN + town.getName());
-            lore.add(ChatColor.GRAY + "Type: " + ChatColor.AQUA + claim.getType().toString());
-            
+
+            lore.add("§7Owner: §a" + town.getName());
+            lore.add("§7Type: §b" + claim.getType().toString());
+
             if (town.hasNation()) {
-                lore.add(ChatColor.GRAY + "Nation: " + ChatColor.GOLD + town.getNation().getName());
+                lore.add("§7Nation: §6" + town.getNation().getName());
             }
-            
+
             lore.add("");
-            lore.add(ChatColor.GRAY + "Protection Flags:");
-            lore.add(ChatColor.GRAY + "  PvP: " + (town.isPvp() ? ChatColor.RED + "✔" : ChatColor.GREEN + "✘"));
-            lore.add(ChatColor.GRAY + "  Explosions: " + (town.isExplosions() ? ChatColor.RED + "✔" : ChatColor.GREEN + "✘"));
-            lore.add(ChatColor.GRAY + "  Mobs: " + (town.isMobSpawning() ? ChatColor.GREEN + "✔" : ChatColor.RED + "✘"));
+            lore.add("§7Protection Flags:");
+            lore.add("§7  PvP: " + (town.isPvp() ? "§c✔" : "§a✘"));
+            lore.add("§7  Explosions: " + (town.isExplosions() ? "§c✔" : "§a✘"));
+            lore.add("§7  Mobs: " + (town.isMobSpawning() ? "§a✔" : "§c✘"));
             
             // Add action hints
             if (isOwnTown && resident != null && (resident.isMayor(town.getUuid()) || resident.isAssistant(town.getUuid()))) {
                 lore.add("");
-                lore.add(ChatColor.YELLOW + "Click to unclaim");
+                lore.add("§eClick to unclaim");
             }
             
             meta.setLore(lore);
@@ -132,31 +135,30 @@ public class ClaimMapGUI implements InventoryHolder {
             ItemMeta meta = item.getItemMeta();
             
             if (isPlayerChunk) {
-                meta.setDisplayName(ChatColor.YELLOW + "» " + ChatColor.WHITE + 
-                    "Chunk [" + chunkX + ", " + chunkZ + "]" + ChatColor.YELLOW + " «");
+                meta.setDisplayName("§e» §fChunk [" + chunkX + ", " + chunkZ + "]§e «");
             } else {
-                meta.setDisplayName(ChatColor.WHITE + "Chunk [" + chunkX + ", " + chunkZ + "]");
+                meta.setDisplayName("§fChunk [" + chunkX + ", " + chunkZ + "]");
             }
-            
-            lore.add(ChatColor.GRAY + "Status: " + ChatColor.RED + "Unclaimed");
-            lore.add(ChatColor.GRAY + "World: " + ChatColor.WHITE + worldName);
+
+            lore.add("§7Status: §cUnclaimed");
+            lore.add("§7World: §f" + worldName);
             
             Resident resident = plugin.getDataManager().getResident(player.getUniqueId());
             if (resident != null && resident.hasTown()) {
                 Town town = resident.getTown();
                 if (resident.isMayor() || resident.isAssistant()) {
                     lore.add("");
-                    lore.add(ChatColor.GREEN + "Click to claim for " + town.getName());
+                    lore.add("§aClick to claim for " + town.getName());
                     
                     // Check if adjacent to existing claims
                     boolean isAdjacent = isAdjacentToTownClaim(town, chunkX, chunkZ);
                     if (!isAdjacent && plugin.getConfig().getBoolean("town.require-adjacent-claims", true)) {
-                        lore.add(ChatColor.RED + "⚠ Must be adjacent to existing claim");
+                        lore.add("§c⚠ Must be adjacent to existing claim");
                     }
                 }
             } else {
                 lore.add("");
-                lore.add(ChatColor.GRAY + "Join a town to claim");
+                lore.add("§7Join a town to claim");
             }
             
             meta.setLore(lore);
@@ -199,7 +201,7 @@ public class ClaimMapGUI implements InventoryHolder {
         Resident resident = plugin.getDataManager().getResident(player.getUniqueId());
         
         if (resident == null || !resident.hasTown()) {
-            player.sendMessage(ChatColor.RED + "You must be in a town to claim land!");
+            player.sendMessage(plugin.error("You must be in a town to claim land!"));
             return;
         }
         
@@ -207,46 +209,51 @@ public class ClaimMapGUI implements InventoryHolder {
         
         // Check permissions
         if (!resident.isMayor() && !resident.isAssistant()) {
-            player.sendMessage(ChatColor.RED + "Only the mayor and assistants can claim/unclaim land!");
+            player.sendMessage(plugin.error("Only the mayor and assistants can claim/unclaim land!"));
             return;
         }
         
         if (existingClaim != null) {
             // Try to unclaim
             if (!existingClaim.getTown().equals(town)) {
-                player.sendMessage(ChatColor.RED + "This chunk belongs to " + existingClaim.getTown().getName() + "!");
+                player.sendMessage(plugin.error("This chunk belongs to " + existingClaim.getTown().getName() + "!"));
                 return;
             }
-            
+            // Prevent unclaiming if it would disconnect town territory
+            if (wouldDisconnect(town, existingClaim)) {
+                player.sendMessage(plugin.error("You cannot unclaim that chunk because it would disconnect your town's territory!"));
+                return;
+            }
+
             // Unclaim the chunk
             town.removeClaim(existingClaim);
             plugin.getDataManager().removeClaim(existingClaim);
             plugin.getDataManager().saveAll();
-            
-            player.sendMessage(ChatColor.GREEN + "Unclaimed chunk [" + clickedChunkX + ", " + clickedChunkZ + "]!");
+
+            player.sendMessage(plugin.success("Unclaimed chunk [" + clickedChunkX + ", " + clickedChunkZ + "]!"));
             
         } else {
             // Try to claim
             
             // Check max claims
             int maxClaims = plugin.getConfig().getInt("town.max-claims", 100);
-            if (town.getClaimCount() >= maxClaims) {
-                player.sendMessage(ChatColor.RED + "Your town has reached the maximum number of claims!");
+                if (town.getClaimCount() >= maxClaims) {
+                player.sendMessage(plugin.error("Your town has reached the maximum number of claims!"));
                 return;
             }
             
             // Check adjacency requirement
             if (plugin.getConfig().getBoolean("town.require-adjacent-claims", true)) {
                 if (town.getClaimCount() > 0 && !isAdjacentToTownClaim(town, clickedChunkX, clickedChunkZ)) {
-                    player.sendMessage(ChatColor.RED + "Claims must be adjacent to your existing territory!");
+                    player.sendMessage(plugin.error("Claims must be adjacent to your existing territory!"));
                     return;
                 }
             }
             
             // Check economy
             double cost = plugin.getConfig().getDouble("town.claim-cost", 100.0);
-            if (plugin.getEconomy() != null && !town.withdraw(cost)) {
-                player.sendMessage(ChatColor.RED + "Your town doesn't have enough money! Cost: " + cost);
+                if (plugin.getEconomy() != null && !town.withdraw(cost)) {
+                player.sendMessage(plugin.error("Your town doesn't have enough money! Cost: " + cost));
                 return;
             }
             
@@ -257,14 +264,41 @@ public class ClaimMapGUI implements InventoryHolder {
             town.addClaim(newClaim);
             plugin.getDataManager().saveAll();
             
-            player.sendMessage(ChatColor.GREEN + "Claimed chunk [" + clickedChunkX + ", " + clickedChunkZ + "] for " + town.getName() + "!");
+            player.sendMessage(plugin.success("Claimed chunk [" + clickedChunkX + ", " + clickedChunkZ + "] for " + town.getName() + "!"));
         }
-        
+
         // Refresh the map
         player.closeInventory();
         ClaimMapGUI newMap = new ClaimMapGUI(plugin, player);
         player.openInventory(newMap.getInventory());
     }
+
+    // Check whether removing a claim would split the town's claims into multiple disconnected components
+    private boolean wouldDisconnect(Town town, Claim remove) {
+        List<Claim> remaining = new ArrayList<>();
+        for (Claim c : town.getClaims()) {
+            if (!c.equals(remove)) remaining.add(c);
+        }
+        if (remaining.isEmpty()) return false;
+
+        Set<Claim> visited = new HashSet<>();
+        Deque<Claim> stack = new ArrayDeque<>();
+        stack.push(remaining.get(0));
+        visited.add(remaining.get(0));
+
+        while (!stack.isEmpty()) {
+            Claim cur = stack.pop();
+            for (Claim n : remaining) {
+                if (!visited.contains(n) && cur.isAdjacentTo(n)) {
+                    visited.add(n);
+                    stack.push(n);
+                }
+            }
+        }
+
+        return visited.size() != remaining.size();
+    }
+    
     
     /**
      * Open this GUI for the player

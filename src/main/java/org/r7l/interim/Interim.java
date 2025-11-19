@@ -3,6 +3,11 @@ package org.r7l.interim;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -27,6 +32,8 @@ public class Interim extends JavaPlugin {
     private BlueMapIntegration blueMapIntegration;
     private FloodgateIntegration floodgateIntegration;
     private SpawnParticleManager particleManager;
+    // Active teleport sessions (player UUID -> session)
+    private final java.util.Map<java.util.UUID, TeleportSession> activeTeleports = new java.util.concurrent.ConcurrentHashMap<>();
     
     @Override
     public void onEnable() {
@@ -102,6 +109,114 @@ public class Interim extends JavaPlugin {
         getLogger().info("Nations: " + dataManager.getNations().size());
         getLogger().info("Residents: " + dataManager.getResidents().size());
     }
+
+    // Represents an active teleport countdown for a player
+    private static class TeleportSession {
+        final java.util.UUID playerUuid;
+        final BossBar bar;
+        final BukkitRunnable task;
+        final org.bukkit.Location startLocation;
+        final double costCharged;
+
+        TeleportSession(java.util.UUID playerUuid, BossBar bar, BukkitRunnable task, Location startLocation, double costCharged) {
+            this.playerUuid = playerUuid;
+            this.bar = bar;
+            this.task = task;
+            this.startLocation = startLocation;
+            this.costCharged = costCharged;
+        }
+    }
+
+    /**
+     * Start a teleport session with a bossbar countdown. The player will be teleported when the countdown finishes.
+     * If costCharged &gt; 0 the player was already charged; cancelTeleport(..., true) will refund.
+     */
+    public void startTeleportSession(Player player, org.r7l.interim.model.Town town, double costCharged, int delaySeconds) {
+        // remove any existing session for safety
+        cancelTeleportSession(player.getUniqueId(), true, "Teleport interrupted");
+
+        final BossBar bar = Bukkit.createBossBar("Teleporting to " + town.getName() + "...", BarColor.BLUE, BarStyle.SOLID);
+        bar.setProgress(1.0);
+        bar.addPlayer(player);
+
+        final int total = Math.max(1, delaySeconds);
+        final org.bukkit.Location startLoc = player.getLocation().clone();
+
+        BukkitRunnable runnable = new BukkitRunnable() {
+            int secondsLeft = total;
+
+            @Override
+            public void run() {
+                if (!player.isOnline()) {
+                    // refund if needed
+                    cancelTeleportSession(player.getUniqueId(), true, "You disconnected");
+                    cancel();
+                    return;
+                }
+
+                double progress = (double) secondsLeft / (double) total;
+                bar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+                bar.setTitle("Teleporting in " + secondsLeft + "s");
+
+                if (secondsLeft <= 0) {
+                    bar.removePlayer(player);
+                    bar.setVisible(false);
+                    // perform teleport
+                    player.teleport(town.getSpawn());
+                    player.sendMessage(success("Teleported to " + town.getName() + " spawn!"));
+                    String board = town.getBoard();
+                    if (board != null && !board.isEmpty()) {
+                        player.sendTitle("", board, 10, 60, 10);
+                    }
+                    // remove session
+                    activeTeleports.remove(player.getUniqueId());
+                    cancel();
+                    return;
+                }
+
+                secondsLeft--;
+            }
+        };
+
+        TeleportSession session = new TeleportSession(player.getUniqueId(), bar, runnable, startLoc, costCharged);
+        activeTeleports.put(player.getUniqueId(), session);
+
+        runnable.runTaskTimer(this, 0L, 20L);
+    }
+
+    /**
+     * Cancel an active teleport session. If refund==true and a cost was charged, refund the player.
+     */
+    public void cancelTeleportSession(java.util.UUID playerUuid, boolean refund, String reason) {
+        TeleportSession session = activeTeleports.remove(playerUuid);
+        if (session == null) return;
+
+        // cancel task
+        try {
+            session.task.cancel();
+        } catch (Exception ignored) {}
+
+        // remove bossbar safely
+        try {
+            Player p = Bukkit.getPlayer(playerUuid);
+            if (p != null) {
+                session.bar.removePlayer(p);
+                session.bar.setVisible(false);
+                if (refund && session.costCharged > 0 && economy != null) {
+                    economy.depositPlayer(p, session.costCharged);
+                    p.sendMessage(info("Teleport cancelled: refund of " + session.costCharged + " issued."));
+                } else if (refund && session.costCharged > 0) {
+                    p.sendMessage(info("Teleport cancelled."));
+                } else if (!refund) {
+                    p.sendMessage(info("Teleport cancelled."));
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public boolean hasActiveTeleport(java.util.UUID playerUuid) {
+        return activeTeleports.containsKey(playerUuid);
+    }
     
     @Override
     public void onDisable() {
@@ -130,11 +245,10 @@ public class Interim extends JavaPlugin {
         }
         
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-            getLogger().warning("No economy plugin found! Economy features disabled.");
+        if (rsp == null || rsp.getProvider() == null) {
+            getLogger().warning("No economy provider found! Economy features disabled.");
             return;
         }
-        
         economy = rsp.getProvider();
         getLogger().info("Hooked into " + economy.getName() + " via Vault!");
     }
@@ -188,6 +302,23 @@ public class Interim extends JavaPlugin {
     
     public Economy getEconomy() {
         return economy;
+    }
+
+    // Messaging helpers to standardize chat output and avoid ChatColor usage
+    public String pref(String message) {
+        return "§9§l[Interim] §7" + message;
+    }
+
+    public String success(String message) {
+        return "§9§l[Interim] §a" + message;
+    }
+
+    public String error(String message) {
+        return "§9§l[Interim] §c" + message;
+    }
+
+    public String info(String message) {
+        return "§9§l[Interim] §e" + message;
     }
     
     public BlueMapIntegration getBlueMapIntegration() {

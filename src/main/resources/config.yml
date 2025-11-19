@@ -23,6 +23,10 @@ town:
   default-explosions: false
   # Allow mob spawning in town by default
   default-mob-spawning: true
+  # Teleport cost to town spawn (charged to player by default)
+  teleport-cost: 200.0
+  # Teleport delay in seconds (shows a bossbar countdown)
+  teleport-delay-seconds: 15
 
 # Nation Settings
 nation:
