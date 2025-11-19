@@ -230,45 +230,10 @@ public class ProtectionListener implements Listener {
         if (damaged instanceof Player) {
             Player victim = (Player) damaged;
             
-            Claim claim = dataManager.getClaim(victim.getLocation());
-            // Allow PvP everywhere regardless of town or wilderness toggle
-            // (we still enforce same-town and nation/ally protections below)
-            
-            // Check nation relations
-            Resident attackerResident = dataManager.getResident(attacker.getUniqueId());
-            Resident victimResident = dataManager.getResident(victim.getUniqueId());
-            
-            if (attackerResident != null && victimResident != null) {
-                if (attackerResident.hasTown() && victimResident.hasTown()) {
-                    Town attackerTown = attackerResident.getTown();
-                    Town victimTown = victimResident.getTown();
-                    
-                    // Same town
-                    if (attackerTown.equals(victimTown)) {
-                        event.setCancelled(true);
-                        attacker.sendMessage(plugin.error("You cannot attack your town members!"));
-                        return;
-                    }
-                    
-                    // Allied nations
-                    if (attackerTown.hasNation() && victimTown.hasNation()) {
-                        Nation attackerNation = attackerTown.getNation();
-                        Nation victimNation = victimTown.getNation();
-                        
-                        if (attackerNation.equals(victimNation)) {
-                            event.setCancelled(true);
-                            attacker.sendMessage(plugin.error("You cannot attack your nation members!"));
-                            return;
-                        }
-
-                        if (attackerNation.isAlly(victimNation.getUuid())) {
-                            event.setCancelled(true);
-                            attacker.sendMessage(plugin.error("You cannot attack your allies!"));
-                            return;
-                        }
-                    }
-                }
-            }
+            // Allow PvP everywhere — do not block player-vs-player based on town/nation membership.
+            // This intentionally overrides any town or nation protection toggles for PvP.
+            // (Non-player entities and entity-damage protections remain enforced below.)
+            return;
         }
         
         // Entity damage protection (item frames, armor stands, etc.)
