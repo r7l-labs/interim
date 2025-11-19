@@ -13,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.r7l.interim.command.AdminCommand;
 import org.r7l.interim.command.MapCommand;
+import org.r7l.interim.command.MenuCommand;
 import org.r7l.interim.command.NationCommand;
 import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
@@ -82,6 +83,9 @@ public class Interim extends JavaPlugin {
         MapCommand mapCommand = new MapCommand(this);
         getCommand("map").setExecutor(mapCommand);
         getCommand("map").setTabCompleter(mapCommand);
+        
+        MenuCommand menuCommand = new MenuCommand(this);
+        getCommand("menu").setExecutor(menuCommand);
         
         // Register listeners
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);

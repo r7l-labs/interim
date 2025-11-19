@@ -5,9 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.InventoryHolder;
-import org.r7l.interim.gui.ClaimMapGUI;
-import org.r7l.interim.gui.TownNationOverviewGUI;
-import org.r7l.interim.gui.SettingsEditorGUI;
+import org.r7l.interim.gui.*;
 
 /**
  * Handles interactions with GUI inventories
@@ -20,40 +18,149 @@ public class GUIListener implements Listener {
             return;
         }
         
+        Player player = (Player) event.getWhoClicked();
         InventoryHolder holder = event.getInventory().getHolder();
 
         // Claim map GUI
-        if (holder instanceof ClaimMapGUI) {
-            event.setCancelled(true); // Prevent item pickup
-
-            if (event.getCurrentItem() == null) {
-                return;
-            }
-
-            Player player = (Player) event.getWhoClicked();
-            ClaimMapGUI gui = (ClaimMapGUI) holder;
-
-            // Handle the click
+        if (holder instanceof ClaimMapGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
             gui.handleClick(player, event.getRawSlot());
             return;
         }
 
-        // Town/Nation overview GUI
-        if (holder instanceof TownNationOverviewGUI) {
+        // Main menu GUI
+        if (holder instanceof MainMenuGUI gui) {
             event.setCancelled(true);
             if (event.getCurrentItem() == null) return;
-            Player player = (Player) event.getWhoClicked();
-            TownNationOverviewGUI gui = (TownNationOverviewGUI) holder;
             gui.handleClick(player, event.getRawSlot());
             return;
         }
 
-        // Settings editor GUI
-        if (holder instanceof SettingsEditorGUI) {
+        // Town menu GUI
+        if (holder instanceof TownMenuGUI gui) {
             event.setCancelled(true);
             if (event.getCurrentItem() == null) return;
-            Player player = (Player) event.getWhoClicked();
-            SettingsEditorGUI gui = (SettingsEditorGUI) holder;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Nation menu GUI
+        if (holder instanceof NationMenuGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Economy menu GUI
+        if (holder instanceof EconomyMenuGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Settings menu GUI
+        if (holder instanceof SettingsMenuGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Plot menu GUI
+        if (holder instanceof PlotMenuGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Confirm action GUI
+        if (holder instanceof ConfirmActionGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Town list GUI
+        if (holder instanceof TownListGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Nation list GUI
+        if (holder instanceof NationListGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Resident list GUI
+        if (holder instanceof ResidentListGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Resident info GUI
+        if (holder instanceof ResidentInfoGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Town switch GUI
+        if (holder instanceof TownSwitchGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Invites GUI
+        if (holder instanceof InvitesGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot(), event.isLeftClick());
+            return;
+        }
+
+        // Nation town list GUI
+        if (holder instanceof NationTownListGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Nation relation GUI
+        if (holder instanceof NationRelationGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Town/Nation overview GUI (legacy)
+        if (holder instanceof TownNationOverviewGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // Settings editor GUI (legacy)
+        if (holder instanceof SettingsEditorGUI gui) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
             gui.handleClick(player, event.getRawSlot());
             return;
         }

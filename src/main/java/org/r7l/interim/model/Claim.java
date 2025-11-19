@@ -13,6 +13,9 @@ public class Claim {
     private Town town;
     private ClaimType type;
     private long claimedTime;
+    private boolean pvpEnabled;
+    private boolean explosionsEnabled;
+    private boolean mobSpawningEnabled;
     
     public Claim(World world, int x, int z, Town town) {
         this.worldName = world.getName();
@@ -21,6 +24,9 @@ public class Claim {
         this.town = town;
         this.type = ClaimType.NORMAL;
         this.claimedTime = System.currentTimeMillis();
+        this.pvpEnabled = false;
+        this.explosionsEnabled = false;
+        this.mobSpawningEnabled = true;
     }
     
     public Claim(Chunk chunk, Town town) {
@@ -79,6 +85,30 @@ public class Claim {
         int dx = Math.abs(this.x - other.x);
         int dz = Math.abs(this.z - other.z);
         return (dx == 1 && dz == 0) || (dx == 0 && dz == 1);
+    }
+    
+    public boolean isPvpEnabled() {
+        return pvpEnabled;
+    }
+    
+    public void setPvpEnabled(boolean pvpEnabled) {
+        this.pvpEnabled = pvpEnabled;
+    }
+    
+    public boolean isExplosionsEnabled() {
+        return explosionsEnabled;
+    }
+    
+    public void setExplosionsEnabled(boolean explosionsEnabled) {
+        this.explosionsEnabled = explosionsEnabled;
+    }
+    
+    public boolean isMobSpawningEnabled() {
+        return mobSpawningEnabled;
+    }
+    
+    public void setMobSpawningEnabled(boolean mobSpawningEnabled) {
+        this.mobSpawningEnabled = mobSpawningEnabled;
     }
     
     @Override

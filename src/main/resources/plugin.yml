@@ -11,6 +11,10 @@ commands:
     description: Open the Interim overview GUI
     usage: /<command>
     aliases: [la, to, town]
+  menu:
+    description: Open the main Interim menu GUI
+    usage: /<command>
+    aliases: [gui, tmenu]
   town:
     description: Town management commands
     usage: /<command> [args]

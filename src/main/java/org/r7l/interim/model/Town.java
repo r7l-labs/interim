@@ -202,6 +202,16 @@ public class Town {
         return residents.size();
     }
     
+    public String getTag() {
+        // Generate tag from first 4 characters of name
+        return name.length() <= 4 ? name : name.substring(0, 4);
+    }
+    
+    public int getMaxClaims() {
+        // Base claims + bonus per resident
+        return 10 + (residents.size() * 2);
+    }
+    
     public Claim getClaimAt(Location location) {
         for (Claim claim : claims) {
             if (claim.isInClaim(location)) {

@@ -140,6 +140,19 @@ public class Nation {
         this.color = color;
     }
     
+    public String getTag() {
+        // Generate tag from first 4 characters of name
+        return name.length() <= 4 ? name : name.substring(0, 4);
+    }
+    
+    public int getAllyCount() {
+        return allies.size();
+    }
+    
+    public int getEnemyCount() {
+        return enemies.size();
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
