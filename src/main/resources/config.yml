@@ -29,6 +29,11 @@ town:
   teleport-delay-seconds: 15
   # How long /town view shows claim borders (seconds)
   view-duration-seconds: 15
+  # Worlds where claiming is allowed (list of world names)
+  allowed-claim-worlds:
+    - world
+    - world_nether
+    - world_the_end
 
 # Nation Settings
 nation:

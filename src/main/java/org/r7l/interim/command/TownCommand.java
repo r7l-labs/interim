@@ -177,15 +177,22 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         player.sendMessage(success("Town '" + townName + "' has been created!"));
 
+        // Only allow claiming in configured worlds
+        List<String> allowedWorlds = plugin.getConfig().getStringList("town.allowed-claim-worlds");
+        String currentWorld = player.getWorld().getName();
+        if (!allowedWorlds.contains(currentWorld)) {
+            player.sendMessage(error("Claiming is not allowed in this world."));
+            return true;
+        }
         // Auto-claim the chunk where the player is standing
-            int chunkX = player.getLocation().getBlockX() >> 4;
-            int chunkZ = player.getLocation().getBlockZ() >> 4;
-            if (!dataManager.isClaimed(player.getWorld().getName(), chunkX, chunkZ)) {
-                Claim claim = new Claim(player.getLocation().getChunk(), town);
-                dataManager.addClaim(claim);
-                town.addClaim(claim);
-                player.sendMessage(success("Starting chunk claimed for " + town.getName() + "!"));
-            }
+        int chunkX = player.getLocation().getBlockX() >> 4;
+        int chunkZ = player.getLocation().getBlockZ() >> 4;
+        if (!dataManager.isClaimed(currentWorld, chunkX, chunkZ)) {
+            Claim claim = new Claim(player.getLocation().getChunk(), town);
+            dataManager.addClaim(claim);
+            town.addClaim(claim);
+            player.sendMessage(success("Starting chunk claimed for " + town.getName() + "!"));
+        }
         // Broadcast creation to server with a pretty message
         Bukkit.getServer().broadcastMessage(plugin.success("Town '" + town.getName() + "' has been created by " + player.getName() + "!"));
         return true;
