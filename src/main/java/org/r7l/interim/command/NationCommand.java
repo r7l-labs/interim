@@ -21,10 +21,22 @@ public class NationCommand implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
         this.dataManager = plugin.getDataManager();
     }
+
+    // convenience wrappers for consistent messaging
+    private String pref(String msg) { return plugin.pref(msg); }
+    private String success(String msg) { return plugin.success(msg); }
+    private String error(String msg) { return plugin.error(msg); }
+    private String info(String msg) { return plugin.info(msg); }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
+            // Open the nation menu GUI when running /nation with no arguments
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                new org.r7l.interim.gui.NationMenuGUI(plugin, player).open();
+                return true;
+            }
             sendHelp(sender);
             return true;
         }
@@ -56,6 +68,8 @@ public class NationCommand implements CommandExecutor, TabCompleter {
                 return handleInfo(sender, args);
             case "list":
                 return handleList(sender, args);
+            case "tag":
+                return handleTag(sender, args);
             case "board":
                 return handleBoard(sender, args);
             case "rename":
@@ -224,6 +238,43 @@ public class NationCommand implements CommandExecutor, TabCompleter {
             mayor.sendMessage(ChatColor.GREEN + "Your town has been added to the nation " + nation.getName() + "!");
         }
         
+        return true;
+    }
+
+    private boolean handleTag(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(error("Only players can set the nation tag."));
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Resident resident = dataManager.getResident(player.getUniqueId());
+        if (resident == null || !resident.hasNation()) {
+            player.sendMessage(error("You are not in a nation!"));
+            return true;
+        }
+
+        Nation nation = resident.getNation();
+        Town capital = dataManager.getTown(nation.getCapital());
+        if (capital == null || !capital.getMayor().equals(player.getUniqueId())) {
+            player.sendMessage(error("Only the capital's mayor can set the nation tag!"));
+            return true;
+        }
+
+        if (args.length < 2) {
+            player.sendMessage(info("Usage: /nation tag <4-char-tag>"));
+            return true;
+        }
+
+        String tag = args[1];
+        if (tag.length() > 4 || tag.length() < 1) {
+            player.sendMessage(error("Tag must be 1-4 characters long."));
+            return true;
+        }
+
+        nation.setTag(tag);
+        dataManager.saveAll();
+        player.sendMessage(success("Nation tag set to '" + tag + "'."));
         return true;
     }
     

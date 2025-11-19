@@ -63,6 +63,12 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
+            // Open the town menu GUI when running /town with no arguments
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                new org.r7l.interim.gui.TownMenuGUI(plugin, player).open();
+                return true;
+            }
             sendHelp(sender);
             return true;
         }
@@ -98,6 +104,8 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                 return handleInfo(sender, args);
             case "list":
                 return handleList(sender, args);
+            case "tag":
+                return handleTag(sender, args);
             case "toggle":
                 return handleToggle(sender, args);
             case "rank":
@@ -395,6 +403,42 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         
     player.sendMessage(success("You have left " + town.getName() + "!"));
         
+        return true;
+    }
+
+    private boolean handleTag(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(error("Only players can set the town tag."));
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Resident resident = dataManager.getResident(player.getUniqueId());
+        if (resident == null || !resident.hasTown()) {
+            player.sendMessage(error("You are not in a town!"));
+            return true;
+        }
+
+        Town town = resident.getTown();
+        if (!resident.isMayor() && !resident.isAssistant()) {
+            player.sendMessage(error("You don't have permission to set the town tag!"));
+            return true;
+        }
+
+        if (args.length < 2) {
+            player.sendMessage(info("Usage: /town tag <4-char-tag>"));
+            return true;
+        }
+
+        String tag = args[1];
+        if (tag.length() > 4 || tag.length() < 1) {
+            player.sendMessage(error("Tag must be 1-4 characters long."));
+            return true;
+        }
+
+        town.setTag(tag);
+        dataManager.saveAll();
+        player.sendMessage(success("Town tag set to '" + tag + "'."));
         return true;
     }
     

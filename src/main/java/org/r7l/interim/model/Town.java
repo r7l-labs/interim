@@ -20,6 +20,7 @@ public class Town {
     private boolean explosions;
     private boolean mobSpawning;
     private String board;
+    private String tag;
     
     public Town(String name, UUID mayor) {
         this.uuid = UUID.randomUUID();
@@ -37,6 +38,7 @@ public class Town {
         this.explosions = false;
         this.mobSpawning = true;
         this.board = "";
+        this.tag = "";
         
         // Mayor is automatically a resident
         this.residents.add(mayor);
@@ -197,15 +199,21 @@ public class Town {
     public void setBoard(String board) {
         this.board = board;
     }
+
+    public String getTag() {
+        if (tag != null && !tag.isEmpty()) return tag;
+        // Generate tag from first 4 characters of name
+        return name.length() <= 4 ? name : name.substring(0, 4);
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag == null ? "" : tag;
+    }
     
     public int getResidentCount() {
         return residents.size();
     }
     
-    public String getTag() {
-        // Generate tag from first 4 characters of name
-        return name.length() <= 4 ? name : name.substring(0, 4);
-    }
     
     public int getMaxClaims() {
         // Base claims + bonus per resident

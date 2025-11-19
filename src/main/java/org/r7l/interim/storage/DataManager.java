@@ -639,6 +639,7 @@ public class DataManager {
         json.addProperty("explosions", town.isExplosions());
         json.addProperty("mobSpawning", town.isMobSpawning());
         json.addProperty("board", town.getBoard());
+        json.addProperty("tag", town.getTag());
         
         return json;
     }
@@ -683,6 +684,9 @@ public class DataManager {
         town.setExplosions(json.get("explosions").getAsBoolean());
         town.setMobSpawning(json.get("mobSpawning").getAsBoolean());
         town.setBoard(json.get("board").getAsString());
+        if (json.has("tag")) {
+            town.setTag(json.get("tag").getAsString());
+        }
         
         return town;
     }
@@ -715,6 +719,7 @@ public class DataManager {
         json.addProperty("founded", nation.getFounded());
         json.addProperty("board", nation.getBoard());
         json.addProperty("color", nation.getColor().name());
+        json.addProperty("tag", nation.getTag());
         
         return json;
     }
@@ -756,6 +761,9 @@ public class DataManager {
         
         nation.setBank(json.get("bank").getAsDouble());
         nation.setBoard(json.get("board").getAsString());
+        if (json.has("tag")) {
+            nation.setTag(json.get("tag").getAsString());
+        }
         nation.setColor(NationColor.valueOf(json.get("color").getAsString()));
         
         return nation;

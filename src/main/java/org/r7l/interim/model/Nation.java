@@ -13,6 +13,7 @@ public class Nation {
     private long founded;
     private String board;
     private NationColor color;
+    private String tag;
     
     public Nation(String name, UUID capital) {
         this.uuid = UUID.randomUUID();
@@ -25,6 +26,7 @@ public class Nation {
         this.founded = System.currentTimeMillis();
         this.board = "";
         this.color = NationColor.WHITE;
+        this.tag = "";
         
         // Capital is automatically a member
         this.towns.add(capital);
@@ -131,6 +133,16 @@ public class Nation {
     public void setBoard(String board) {
         this.board = board;
     }
+
+    public String getTag() {
+        if (tag != null && !tag.isEmpty()) return tag;
+        // Generate tag from first 4 characters of name
+        return name.length() <= 4 ? name : name.substring(0, 4);
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag == null ? "" : tag;
+    }
     
     public NationColor getColor() {
         return color;
@@ -140,10 +152,6 @@ public class Nation {
         this.color = color;
     }
     
-    public String getTag() {
-        // Generate tag from first 4 characters of name
-        return name.length() <= 4 ? name : name.substring(0, 4);
-    }
     
     public int getAllyCount() {
         return allies.size();

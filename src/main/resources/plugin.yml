@@ -1,10 +1,10 @@
 name: Interim
-version: dev-0.2.1
+version: dev-0.2.2
 main: org.r7l.interim.Interim
 api-version: '1.21'
 description: A comprehensive nations, towns, and claiming plugin
 author: r7l-labs
-softdepend: [Vault, BlueMap, floodgate]
+softdepend: [Vault, BlueMap, floodgate, PlaceholderAPI]
 
 commands:
   interim:
