@@ -167,11 +167,76 @@ public class BlueMapIntegration {
             }
         }
         
-        // Add all edge points to create the outline
+        if (edges.isEmpty()) {
+            return Shape.builder().build();
+        }
+        
+        // Trace the boundary by connecting edges in order
         Shape.Builder shapeBuilder = Shape.builder();
-        for (EdgeSegment edge : edges) {
-            shapeBuilder.addPoint(new Vector2d(edge.x1, edge.z1));
-            shapeBuilder.addPoint(new Vector2d(edge.x2, edge.z2));
+        java.util.Set<EdgeSegment> usedEdges = new java.util.HashSet<>();
+        java.util.List<EdgeSegment> boundary = new java.util.ArrayList<>();
+        
+        // Start with first edge
+        EdgeSegment current = edges.get(0);
+        boundary.add(current);
+        usedEdges.add(current);
+        shapeBuilder.addPoint(new Vector2d(current.x1, current.z1));
+        
+        double currentX = current.x2;
+        double currentZ = current.z2;
+        
+        // Keep tracing until we return to start or can't find next edge
+        int maxIterations = edges.size() * 2; // Prevent infinite loops
+        int iterations = 0;
+        
+        while (iterations < maxIterations && usedEdges.size() < edges.size()) {
+            iterations++;
+            
+            // Find an unused edge that starts at current endpoint
+            EdgeSegment next = null;
+            for (EdgeSegment edge : edges) {
+                if (usedEdges.contains(edge)) continue;
+                
+                // Check if this edge connects to current point
+                double epsilon = 0.001;
+                if (Math.abs(edge.x1 - currentX) < epsilon && Math.abs(edge.z1 - currentZ) < epsilon) {
+                    next = edge;
+                    break;
+                }
+                // Also check if edge is reversed (end connects to our current point)
+                if (Math.abs(edge.x2 - currentX) < epsilon && Math.abs(edge.z2 - currentZ) < epsilon) {
+                    // Create reversed edge
+                    next = new EdgeSegment(edge.x2, edge.z2, edge.x1, edge.z1);
+                    usedEdges.add(edge); // Mark original as used
+                    break;
+                }
+            }
+            
+            if (next == null) {
+                // Can't find connecting edge, might be multiple polygons
+                // Start a new polygon with an unused edge if available
+                for (EdgeSegment edge : edges) {
+                    if (!usedEdges.contains(edge)) {
+                        next = edge;
+                        usedEdges.add(edge);
+                        shapeBuilder.addPoint(new Vector2d(edge.x1, edge.z1));
+                        currentX = edge.x2;
+                        currentZ = edge.z2;
+                        break;
+                    }
+                }
+                if (next == null) break; // No more edges
+                continue;
+            }
+            
+            boundary.add(next);
+            if (!usedEdges.contains(next)) {
+                usedEdges.add(next);
+            }
+            shapeBuilder.addPoint(new Vector2d(next.x1, next.z1));
+            
+            currentX = next.x2;
+            currentZ = next.z2;
         }
         
         return shapeBuilder.build();
