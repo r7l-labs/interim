@@ -103,12 +103,15 @@ public class Interim extends JavaPlugin {
             setupFloodgate();
         }
 
-        // PlaceholderAPI integration: if PlaceholderAPI is present we will support it in a follow-up
-        // Create a reflection-safe placeholder integration stub and call registration check
-        try {
-            new org.r7l.interim.integration.PlaceholderIntegration(this).registerIfPresent();
-        } catch (Throwable t) {
-            getLogger().fine("PlaceholderIntegration check failed: " + t.getMessage());
+        // PlaceholderAPI integration
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            try {
+                new org.r7l.interim.integration.PlaceholderIntegration(this).registerExpansion();
+            } catch (Throwable t) {
+                getLogger().warning("Failed to register PlaceholderAPI expansion: " + t.getMessage());
+            }
+        } else {
+            getLogger().info("PlaceholderAPI not found - placeholder support disabled");
         }
         
         // Initialize particle manager

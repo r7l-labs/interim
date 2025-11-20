@@ -6,7 +6,7 @@
 
     <groupId>org.r7l</groupId>
     <artifactId>interim</artifactId>
-    <version>dev-0.2.15</version>
+    <version>dev-0.2.16</version>
     <packaging>jar</packaging>
 
     <name>Interim</name>
@@ -68,8 +68,8 @@
             <url>https://repo.opencollab.dev/maven-snapshots/</url>
         </repository>
         <repository>
-            <id>extendedclip</id>
-            <url>https://repo.extendedclip.com/repository/public/</url>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
     </repositories>
 
@@ -101,6 +101,12 @@
             <groupId>org.geysermc.floodgate</groupId>
             <artifactId>api</artifactId>
             <version>2.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.6</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
