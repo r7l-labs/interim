@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.r7l.interim.Interim;
 import org.r7l.interim.model.*;
 import org.r7l.interim.storage.DataManager;
+import org.r7l.interim.util.UpdateChecker;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -59,6 +60,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 return handleReload(sender);
             case "bluemap":
                 return handleBlueMap(sender);
+            case "update":
+                return handleUpdate(sender, args);
             default:
                 sender.sendMessage("§cUnknown subcommand. Use /interimadmin for help.");
                 return true;
@@ -1172,6 +1175,53 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§aBlueMap markers updated successfully.");
         return true;
     }
+    
+    // Update command
+    private boolean handleUpdate(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§cUsage: /interimadmin update <check|download>");
+            return true;
+        }
+        
+        String action = args[1].toLowerCase();
+        
+        switch (action) {
+            case "check":
+                sender.sendMessage("§eChecking for updates...");
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    UpdateChecker checker = new UpdateChecker(plugin);
+                    if (checker.checkForUpdate()) {
+                        sender.sendMessage("§aUpdate available: §e" + checker.getCurrentVersion() + " §7→ §a" + checker.getLatestVersion());
+                        sender.sendMessage("§eRun §6/interimadmin update download §eto download the update.");
+                    } else {
+                        sender.sendMessage("§aYou are running the latest version: §e" + checker.getCurrentVersion());
+                    }
+                });
+                return true;
+                
+            case "download":
+                sender.sendMessage("§eChecking for updates...");
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    UpdateChecker checker = new UpdateChecker(plugin);
+                    if (checker.checkForUpdate()) {
+                        sender.sendMessage("§eDownloading update: §a" + checker.getLatestVersion());
+                        if (checker.downloadUpdate()) {
+                            sender.sendMessage("§aUpdate downloaded successfully!");
+                            sender.sendMessage("§eRestart the server to apply the update.");
+                        } else {
+                            sender.sendMessage("§cFailed to download update. Check console for details.");
+                        }
+                    } else {
+                        sender.sendMessage("§aYou are already running the latest version: §e" + checker.getCurrentVersion());
+                    }
+                });
+                return true;
+                
+            default:
+                sender.sendMessage("§cUsage: /interimadmin update <check|download>");
+                return true;
+        }
+    }
 
     // Recover command - one-time recovery to reattach claims to towns
     private boolean handleRecover(CommandSender sender, String[] args) {
@@ -1225,6 +1275,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/interimadmin purge <towns|nations|residents|all> confirm §7- Purge data");
         sender.sendMessage("§e/interimadmin reload §7- Reload config and data");
         sender.sendMessage("§e/interimadmin bluemap §7- Force update BlueMap markers");
+        sender.sendMessage("§e/interimadmin update <check|download> §7- Check or download plugin updates");
         sender.sendMessage("§e/interimadmin recover confirm §7- Attempt one-time recovery of claims (creates backups)");
     }
     
@@ -1237,7 +1288,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload", "bluemap", "recover");
+            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload", "bluemap", "update", "recover");
         }
         
         if (args.length == 2) {
@@ -1254,6 +1305,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                     return Arrays.asList("town", "nation", "player");
                 case "purge":
                     return Arrays.asList("towns", "nations", "residents", "all");
+                case "update":
+                    return Arrays.asList("check", "download");
             }
         }
         

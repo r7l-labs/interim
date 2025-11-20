@@ -6,7 +6,7 @@
 
     <groupId>org.r7l</groupId>
     <artifactId>interim</artifactId>
-    <version>dev-0.2.14</version>
+    <version>dev-0.2.15</version>
     <packaging>jar</packaging>
 
     <name>Interim</name>
