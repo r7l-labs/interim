@@ -101,32 +101,91 @@ public class BlueMapIntegration {
             if (worldClaims.isEmpty()) continue;
             
             Color townColor = getTownColor(town);
+            String markerId = "town_" + town.getUuid().toString() + "_" + world.getName();
             
-            // Create individual markers for each chunk but with consistent styling
-            for (Claim claim : worldClaims) {
-                String markerId = "town_" + town.getUuid().toString() + "_chunk_" + claim.getX() + "_" + claim.getZ();
-                
-                // Create chunk boundary shape
-                Shape chunkShape = createChunkShape(claim.getX(), claim.getZ());
-                
-                // Create shape marker
-                ShapeMarker marker = ShapeMarker.builder()
-                    .label(town.getName())
-                    .detail(getTownDetail(town, worldClaims.size()))
-                    .shape(chunkShape, 0f) // y at 0
-                    .lineColor(townColor)
-                    .lineWidth(2)
-                    .fillColor(new Color(
-                        townColor.getRed(),
-                        townColor.getGreen(),
-                        townColor.getBlue(),
-                        0.2f // 20% opacity for fill
-                    ))
-                    .depthTestEnabled(false)
-                    .build();
-                
-                markerSet.put(markerId, marker);
+            // Create outline shape that only draws outer boundaries
+            Shape townShape = createTerritoryOutline(worldClaims);
+            
+            // Create shape marker for the entire town
+            ShapeMarker marker = ShapeMarker.builder()
+                .label(town.getName())
+                .detail(getTownDetail(town, worldClaims.size()))
+                .shape(townShape, 0f) // y at 0
+                .lineColor(townColor)
+                .lineWidth(2)
+                .fillColor(new Color(
+                    townColor.getRed(),
+                    townColor.getGreen(),
+                    townColor.getBlue(),
+                    0.2f // 20% opacity for fill
+                ))
+                .depthTestEnabled(false)
+                .build();
+            
+            markerSet.put(markerId, marker);
+        }
+    }
+    
+    private Shape createTerritoryOutline(java.util.List<Claim> claims) {
+        if (claims.isEmpty()) {
+            return Shape.builder().build();
+        }
+        
+        // Create a set for quick chunk lookup
+        java.util.Set<String> claimSet = new java.util.HashSet<>();
+        for (Claim claim : claims) {
+            claimSet.add(claim.getX() + "," + claim.getZ());
+        }
+        
+        // Collect all edge segments (only draw edges that border non-claimed chunks)
+        java.util.List<EdgeSegment> edges = new java.util.ArrayList<>();
+        
+        for (Claim claim : claims) {
+            int cx = claim.getX();
+            int cz = claim.getZ();
+            int x1 = cx * 16;
+            int z1 = cz * 16;
+            int x2 = x1 + 16;
+            int z2 = z1 + 16;
+            
+            // Check each side - only add edge if neighbor is not claimed
+            // North side (z-)
+            if (!claimSet.contains((cx) + "," + (cz - 1))) {
+                edges.add(new EdgeSegment(x1, z1, x2, z1));
             }
+            // East side (x+)
+            if (!claimSet.contains((cx + 1) + "," + (cz))) {
+                edges.add(new EdgeSegment(x2, z1, x2, z2));
+            }
+            // South side (z+)
+            if (!claimSet.contains((cx) + "," + (cz + 1))) {
+                edges.add(new EdgeSegment(x2, z2, x1, z2));
+            }
+            // West side (x-)
+            if (!claimSet.contains((cx - 1) + "," + (cz))) {
+                edges.add(new EdgeSegment(x1, z2, x1, z1));
+            }
+        }
+        
+        // Add all edge points to create the outline
+        Shape.Builder shapeBuilder = Shape.builder();
+        for (EdgeSegment edge : edges) {
+            shapeBuilder.addPoint(new Vector2d(edge.x1, edge.z1));
+            shapeBuilder.addPoint(new Vector2d(edge.x2, edge.z2));
+        }
+        
+        return shapeBuilder.build();
+    }
+    
+    // Helper class to represent an edge segment
+    private static class EdgeSegment {
+        final double x1, z1, x2, z2;
+        
+        EdgeSegment(double x1, double z1, double x2, double z2) {
+            this.x1 = x1;
+            this.z1 = z1;
+            this.x2 = x2;
+            this.z2 = z2;
         }
     }
     
