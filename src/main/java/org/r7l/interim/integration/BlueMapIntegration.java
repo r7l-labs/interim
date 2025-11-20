@@ -88,51 +88,62 @@ public class BlueMapIntegration {
         // Clear existing markers
         markerSet.getMarkers().clear();
         
-        // Add markers for each claim in this world
+        // Create one marker per town (grouping all their claims)
         for (Town town : dataManager.getTowns()) {
-            Color townColor = getTownColor(town);
-            
+            // Filter claims for this world
+            java.util.List<Claim> worldClaims = new java.util.ArrayList<>();
             for (Claim claim : town.getClaims()) {
-                if (!claim.getWorldName().equals(world.getName())) continue;
-                
-                String markerId = "claim_" + claim.getCoordString().replace(":", "_").replace(",", "_");
-                
-                // Create chunk boundary shape
-                Shape shape = createChunkShape(claim.getX(), claim.getZ());
-                
-                // Create shape marker
-                ShapeMarker marker = ShapeMarker.builder()
-                    .label(town.getName())
-                    .detail(getClaimDetail(town, claim))
-                    .shape(shape, 0f) // y at 0
-                    .lineColor(townColor)
-                    .lineWidth(2)
-                    .fillColor(new Color(
-                        townColor.getRed(),
-                        townColor.getGreen(),
-                        townColor.getBlue(),
-                        0.2f // 20% opacity for fill
-                    ))
-                    .depthTestEnabled(false)
-                    .build();
-                
-                markerSet.put(markerId, marker);
+                if (claim.getWorldName().equals(world.getName())) {
+                    worldClaims.add(claim);
+                }
             }
+            
+            if (worldClaims.isEmpty()) continue;
+            
+            Color townColor = getTownColor(town);
+            String markerId = "town_" + town.getUuid().toString() + "_" + world.getName();
+            
+            // Create merged shape from all claims
+            Shape townShape = createMergedShape(worldClaims);
+            
+            // Create shape marker for the entire town
+            ShapeMarker marker = ShapeMarker.builder()
+                .label(town.getName())
+                .detail(getTownDetail(town, worldClaims.size()))
+                .shape(townShape, 0f) // y at 0
+                .lineColor(townColor)
+                .lineWidth(2)
+                .fillColor(new Color(
+                    townColor.getRed(),
+                    townColor.getGreen(),
+                    townColor.getBlue(),
+                    0.2f // 20% opacity for fill
+                ))
+                .depthTestEnabled(false)
+                .build();
+            
+            markerSet.put(markerId, marker);
         }
     }
     
-    private Shape createChunkShape(int chunkX, int chunkZ) {
-        int x1 = chunkX * 16;
-        int z1 = chunkZ * 16;
-        int x2 = x1 + 16;
-        int z2 = z1 + 16;
+    private Shape createMergedShape(java.util.List<Claim> claims) {
+        Shape.Builder shapeBuilder = Shape.builder();
         
-        return Shape.builder()
-            .addPoint(new Vector2d(x1, z1))
-            .addPoint(new Vector2d(x2, z1))
-            .addPoint(new Vector2d(x2, z2))
-            .addPoint(new Vector2d(x1, z2))
-            .build();
+        // Add all chunk boundaries as one continuous shape
+        for (Claim claim : claims) {
+            int x1 = claim.getX() * 16;
+            int z1 = claim.getZ() * 16;
+            int x2 = x1 + 16;
+            int z2 = z1 + 16;
+            
+            // Add the four corners of this chunk
+            shapeBuilder.addPoint(new Vector2d(x1, z1));
+            shapeBuilder.addPoint(new Vector2d(x2, z1));
+            shapeBuilder.addPoint(new Vector2d(x2, z2));
+            shapeBuilder.addPoint(new Vector2d(x1, z2));
+        }
+        
+        return shapeBuilder.build();
     }
     
     private Color getTownColor(Town town) {
@@ -202,7 +213,7 @@ public class BlueMapIntegration {
         }
     }
     
-    private String getClaimDetail(Town town, Claim claim) {
+    private String getTownDetail(Town town, int claimCount) {
         StringBuilder detail = new StringBuilder();
         
         detail.append("<b>Town:</b> ").append(town.getName()).append("<br>");
@@ -213,8 +224,8 @@ public class BlueMapIntegration {
         
         detail.append("<b>Mayor:</b> ").append(Bukkit.getOfflinePlayer(town.getMayor()).getName()).append("<br>");
         detail.append("<b>Residents:</b> ").append(town.getResidentCount()).append("<br>");
-        detail.append("<b>Chunk:</b> [").append(claim.getX()).append(", ").append(claim.getZ()).append("]<br>");
-        detail.append("<b>Type:</b> ").append(claim.getType()).append("<br>");
+        detail.append("<b>Claims:</b> ").append(claimCount).append(" chunks<br>");
+        detail.append("<b>Bank:</b> $").append(String.format("%.2f", town.getBank())).append("<br>");
         
         return detail.toString();
     }
