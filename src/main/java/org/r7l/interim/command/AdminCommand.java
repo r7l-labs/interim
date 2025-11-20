@@ -65,7 +65,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleTownAdmin(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /interimadmin town <create|delete|kick|add|rename|deposit|withdraw> [args]");
+            sender.sendMessage("§cUsage: /interimadmin town <create|delete|kick|add|rename|deposit|withdraw|color> [args]");
             return true;
         }
         
@@ -86,6 +86,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 return forceDepositTown(sender, args);
             case "withdraw":
                 return forceWithdrawTown(sender, args);
+            case "color":
+                return forceSetTownColor(sender, args);
             default:
                 sender.sendMessage("§cUnknown town action: " + action);
                 return true;
@@ -94,7 +96,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     
     private boolean handleNationAdmin(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /interimadmin nation <create|delete|kick|add|rename|deposit|withdraw> [args]");
+            sender.sendMessage("§cUsage: /interimadmin nation <create|delete|kick|add|rename|deposit|withdraw|color> [args]");
             return true;
         }
         
@@ -115,6 +117,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 return forceDepositNation(sender, args);
             case "withdraw":
                 return forceWithdrawNation(sender, args);
+            case "color":
+                return forceSetNationColor(sender, args);
             default:
                 sender.sendMessage("§cUnknown nation action: " + action);
                 return true;
@@ -432,6 +436,45 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         return true;
     }
     
+    private boolean forceSetTownColor(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage("§cUsage: /interimadmin town color <townName> <color>");
+            sender.sendMessage("§cAvailable colors: WHITE, RED, BLUE, GREEN, YELLOW, GOLD, AQUA, LIGHT_PURPLE, DARK_GREEN, DARK_AQUA, DARK_PURPLE");
+            return true;
+        }
+        
+        String townName = args[2];
+        Town town = dataManager.getTown(townName);
+        
+        if (town == null) {
+            sender.sendMessage("§cTown '" + townName + "' does not exist.");
+            return true;
+        }
+        
+        String colorName = args[3].toUpperCase();
+        NationColor color;
+        
+        try {
+            color = NationColor.valueOf(colorName);
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage("§cInvalid color: " + args[3]);
+            sender.sendMessage("§cAvailable colors: WHITE, RED, BLUE, GREEN, YELLOW, GOLD, AQUA, LIGHT_PURPLE, DARK_GREEN, DARK_AQUA, DARK_PURPLE");
+            return true;
+        }
+        
+        town.setColor(color);
+        dataManager.saveAll();
+        
+        // Update BlueMap if integration exists
+        if (plugin.getBlueMapIntegration() != null) {
+            plugin.getBlueMapIntegration().updateAllMarkers();
+        }
+        
+        sender.sendMessage("§aSet color of town '" + townName + "' to " + color.getChatColor() + color.name());
+        
+        return true;
+    }
+    
     // Nation admin methods
     private boolean forceCreateNation(CommandSender sender, String[] args) {
         if (args.length < 4) {
@@ -671,6 +714,45 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         dataManager.saveAll();
         
         sender.sendMessage("§aForce withdrew $" + amount + " from nation '" + nationName + "'. New balance: $" + nation.getBank());
+        
+        return true;
+    }
+    
+    private boolean forceSetNationColor(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage("§cUsage: /interimadmin nation color <nationName> <color>");
+            sender.sendMessage("§cAvailable colors: WHITE, RED, BLUE, GREEN, YELLOW, GOLD, AQUA, LIGHT_PURPLE, DARK_GREEN, DARK_AQUA, DARK_PURPLE");
+            return true;
+        }
+        
+        String nationName = args[2];
+        Nation nation = dataManager.getNation(nationName);
+        
+        if (nation == null) {
+            sender.sendMessage("§cNation '" + nationName + "' does not exist.");
+            return true;
+        }
+        
+        String colorName = args[3].toUpperCase();
+        NationColor color;
+        
+        try {
+            color = NationColor.valueOf(colorName);
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage("§cInvalid color: " + args[3]);
+            sender.sendMessage("§cAvailable colors: WHITE, RED, BLUE, GREEN, YELLOW, GOLD, AQUA, LIGHT_PURPLE, DARK_GREEN, DARK_AQUA, DARK_PURPLE");
+            return true;
+        }
+        
+        nation.setColor(color);
+        dataManager.saveAll();
+        
+        // Update BlueMap if integration exists
+        if (plugin.getBlueMapIntegration() != null) {
+            plugin.getBlueMapIntegration().updateAllMarkers();
+        }
+        
+        sender.sendMessage("§aSet color of nation '" + nationName + "' to " + color.getChatColor() + color.name());
         
         return true;
     }
@@ -1111,11 +1193,13 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/interimadmin town rename <old> <new> §7- Force rename town");
         sender.sendMessage("§e/interimadmin town deposit <town> <amount> §7- Add money to town");
         sender.sendMessage("§e/interimadmin town withdraw <town> <amount> §7- Remove money from town");
+        sender.sendMessage("§e/interimadmin town color <town> <color> §7- Set town color");
         sender.sendMessage("§e/interimadmin nation create <name> <capital> §7- Force create nation");
         sender.sendMessage("§e/interimadmin nation delete <name> §7- Force delete nation");
         sender.sendMessage("§e/interimadmin nation kick <nation> <town> §7- Force kick town");
         sender.sendMessage("§e/interimadmin nation add <nation> <town> §7- Force add town");
         sender.sendMessage("§e/interimadmin nation rename <old> <new> §7- Force rename nation");
+        sender.sendMessage("§e/interimadmin nation color <nation> <color> §7- Set nation color");
         sender.sendMessage("§e/interimadmin resident setrank <player> <rank> §7- Force set rank");
         sender.sendMessage("§e/interimadmin resident reset <player> §7- Reset player data");
         sender.sendMessage("§e/interimadmin claim add <town> [x] [z] [world] §7- Force claim");
@@ -1143,9 +1227,9 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2) {
             switch (args[0].toLowerCase()) {
                 case "town":
-                    return Arrays.asList("create", "delete", "kick", "add", "rename", "deposit", "withdraw");
+                    return Arrays.asList("create", "delete", "kick", "add", "rename", "deposit", "withdraw", "color");
                 case "nation":
-                    return Arrays.asList("create", "delete", "kick", "add", "rename", "deposit", "withdraw");
+                    return Arrays.asList("create", "delete", "kick", "add", "rename", "deposit", "withdraw", "color");
                 case "resident":
                     return Arrays.asList("setrank", "reset");
                 case "claim":
@@ -1201,10 +1285,20 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 if (args[1].equalsIgnoreCase("kick") || args[1].equalsIgnoreCase("add")) {
                     return null; // Show online players
                 }
+                if (args[1].equalsIgnoreCase("color")) {
+                    return Arrays.stream(NationColor.values())
+                            .map(Enum::name)
+                            .collect(Collectors.toList());
+                }
             } else if (args[0].equalsIgnoreCase("nation")) {
                 if (args[1].equalsIgnoreCase("kick") || args[1].equalsIgnoreCase("add")) {
                     return dataManager.getTowns().stream()
                             .map(Town::getName)
+                            .collect(Collectors.toList());
+                }
+                if (args[1].equalsIgnoreCase("color")) {
+                    return Arrays.stream(NationColor.values())
+                            .map(Enum::name)
                             .collect(Collectors.toList());
                 }
             } else if (args[0].equalsIgnoreCase("resident") && args[1].equalsIgnoreCase("setrank")) {
