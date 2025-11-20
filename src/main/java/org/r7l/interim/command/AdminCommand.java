@@ -57,6 +57,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 return handlePurge(sender, args);
             case "reload":
                 return handleReload(sender);
+            case "bluemap":
+                return handleBlueMap(sender);
             default:
                 sender.sendMessage("§cUnknown subcommand. Use /interimadmin for help.");
                 return true;
@@ -1157,6 +1159,19 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§aReloaded Interim configuration and data.");
         return true;
     }
+    
+    // BlueMap command
+    private boolean handleBlueMap(CommandSender sender) {
+        if (plugin.getBlueMapIntegration() == null) {
+            sender.sendMessage("§cBlueMap integration is not enabled.");
+            return true;
+        }
+        
+        sender.sendMessage("§eUpdating BlueMap markers...");
+        plugin.getBlueMapIntegration().updateAllMarkers();
+        sender.sendMessage("§aBlueMap markers updated successfully.");
+        return true;
+    }
 
     // Recover command - one-time recovery to reattach claims to towns
     private boolean handleRecover(CommandSender sender, String[] args) {
@@ -1209,6 +1224,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/interimadmin info <town|nation|player> <name> §7- View detailed info");
         sender.sendMessage("§e/interimadmin purge <towns|nations|residents|all> confirm §7- Purge data");
         sender.sendMessage("§e/interimadmin reload §7- Reload config and data");
+        sender.sendMessage("§e/interimadmin bluemap §7- Force update BlueMap markers");
         sender.sendMessage("§e/interimadmin recover confirm §7- Attempt one-time recovery of claims (creates backups)");
     }
     
@@ -1221,7 +1237,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload", "recover");
+            return Arrays.asList("town", "nation", "resident", "claim", "info", "purge", "reload", "bluemap", "recover");
         }
         
         if (args.length == 2) {
