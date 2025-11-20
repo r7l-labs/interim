@@ -12,6 +12,7 @@ import org.bukkit.World;
 import org.r7l.interim.Interim;
 import org.r7l.interim.model.Claim;
 import org.r7l.interim.model.Nation;
+import org.r7l.interim.model.NationColor;
 import org.r7l.interim.model.Town;
 import org.r7l.interim.storage.DataManager;
 
@@ -136,12 +137,41 @@ public class BlueMapIntegration {
     
     private Color getTownColor(Town town) {
         if (town.hasNation()) {
+            // Towns with nations use nation color
             Nation nation = town.getNation();
             return getNationColor(nation);
         }
         
-        // Default color for towns without nation (cyan)
-        return new Color(0, 255, 255, 1.0f);
+        // Nationless towns use their own town color
+        return getTownColorFromEnum(town.getColor());
+    }
+    
+    private Color getTownColorFromEnum(NationColor townColor) {
+        switch (townColor) {
+            case RED:
+                return new Color(255, 0, 0, 1.0f);
+            case BLUE:
+                return new Color(0, 0, 255, 1.0f);
+            case GREEN:
+                return new Color(0, 255, 0, 1.0f);
+            case YELLOW:
+                return new Color(255, 255, 0, 1.0f);
+            case GOLD:
+                return new Color(255, 215, 0, 1.0f);
+            case AQUA:
+                return new Color(0, 255, 255, 1.0f);
+            case LIGHT_PURPLE:
+                return new Color(255, 0, 255, 1.0f);
+            case DARK_GREEN:
+                return new Color(0, 128, 0, 1.0f);
+            case DARK_AQUA:
+                return new Color(0, 139, 139, 1.0f);
+            case DARK_PURPLE:
+                return new Color(128, 0, 128, 1.0f);
+            case WHITE:
+            default:
+                return new Color(255, 255, 255, 1.0f);
+        }
     }
     
     private Color getNationColor(Nation nation) {

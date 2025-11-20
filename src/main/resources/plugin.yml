@@ -1,5 +1,5 @@
 name: Interim
-version: dev-0.2.5
+version: dev-0.2.6
 main: org.r7l.interim.Interim
 api-version: '1.21'
 description: A comprehensive nations, towns, and claiming plugin

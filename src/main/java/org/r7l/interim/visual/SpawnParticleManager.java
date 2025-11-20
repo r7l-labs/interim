@@ -172,19 +172,23 @@ public class SpawnParticleManager {
                     int baseZ = chunkZ << 4;
                     double y = player.getLocation().getY();
 
-                    // spawn particles along the four edges of the chunk every 2 blocks
-                    for (int i = 0; i <= 16; i += 2) {
-                        // north edge (z = baseZ)
+                    // Create continuous particle streams along chunk boundaries
+                    // Using smaller spacing (0.5 blocks) for a continuous appearance
+                    for (double i = 0; i <= 16; i += 0.5) {
+                        // North edge (z = baseZ)
                         Location nLoc = new Location(world, baseX + i, y, baseZ + 0.5);
                         world.spawnParticle(Particle.DUST, nLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
-                        // south edge (z = baseZ+15)
-                        Location sLoc = new Location(world, baseX + i, y, baseZ + 15 + 0.5);
+                        // South edge (z = baseZ+16)
+                        Location sLoc = new Location(world, baseX + i, y, baseZ + 16 - 0.5);
                         world.spawnParticle(Particle.DUST, sLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
-                        // west edge (x = baseX)
+                    }
+                    
+                    for (double i = 0; i <= 16; i += 0.5) {
+                        // West edge (x = baseX)
                         Location wLoc = new Location(world, baseX + 0.5, y, baseZ + i);
                         world.spawnParticle(Particle.DUST, wLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
-                        // east edge (x = baseX+15)
-                        Location eLoc = new Location(world, baseX + 15 + 0.5, y, baseZ + i);
+                        // East edge (x = baseX+16)
+                        Location eLoc = new Location(world, baseX + 16 - 0.5, y, baseZ + i);
                         world.spawnParticle(Particle.DUST, eLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 1.0f));
                     }
                 }

@@ -21,6 +21,7 @@ public class Town {
     private boolean mobSpawning;
     private String board;
     private String tag;
+    private NationColor color;
     
     public Town(String name, UUID mayor) {
         this.uuid = UUID.randomUUID();
@@ -39,6 +40,7 @@ public class Town {
         this.mobSpawning = true;
         this.board = "";
         this.tag = "";
+        this.color = NationColor.AQUA; // Default cyan color for new towns
         
         // Mayor is automatically a resident
         this.residents.add(mayor);
@@ -208,6 +210,14 @@ public class Town {
 
     public void setTag(String tag) {
         this.tag = tag == null ? "" : tag;
+    }
+
+    public NationColor getColor() {
+        return color != null ? color : NationColor.AQUA;
+    }
+
+    public void setColor(NationColor color) {
+        this.color = color;
     }
     
     public int getResidentCount() {
