@@ -478,11 +478,18 @@ public class DataManager {
         for (File file : files) {
             try (Reader reader = new FileReader(file)) {
                 JsonObject json = gson.fromJson(reader, JsonObject.class);
-                Town town = deserializeTown(json);
-                if (town != null) {
-                    addTown(town);
+                if (json != null) {
+                    Town town = deserializeTown(json);
+                    if (town != null) {
+                        addTown(town);
+                    }
+                } else {
+                    System.err.println("Warning: Skipping corrupted town file: " + file.getName());
                 }
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                System.err.println("Error loading town from " + file.getName() + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -510,11 +517,18 @@ public class DataManager {
         for (File file : files) {
             try (Reader reader = new FileReader(file)) {
                 JsonObject json = gson.fromJson(reader, JsonObject.class);
-                Nation nation = deserializeNation(json);
-                if (nation != null) {
-                    addNation(nation);
+                if (json != null) {
+                    Nation nation = deserializeNation(json);
+                    if (nation != null) {
+                        addNation(nation);
+                    }
+                } else {
+                    System.err.println("Warning: Skipping corrupted nation file: " + file.getName());
                 }
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                System.err.println("Error loading nation from " + file.getName() + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -541,13 +555,20 @@ public class DataManager {
             JsonArray array = gson.fromJson(reader, JsonArray.class);
             if (array != null) {
                 for (JsonElement element : array) {
-                    Resident resident = deserializeResident(element.getAsJsonObject());
-                    if (resident != null) {
-                        addResident(resident);
+                    if (element != null && element.isJsonObject()) {
+                        Resident resident = deserializeResident(element.getAsJsonObject());
+                        if (resident != null) {
+                            addResident(resident);
+                        }
                     }
                 }
+            } else {
+                System.err.println("Warning: residents.json is empty or corrupted");
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Error loading residents: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -646,6 +667,10 @@ public class DataManager {
     }
     
     private Town deserializeTown(JsonObject json) {
+        if (json == null) {
+            return null;
+        }
+        
         UUID uuid = UUID.fromString(json.get("uuid").getAsString());
         String name = json.get("name").getAsString();
         UUID mayor = UUID.fromString(json.get("mayor").getAsString());
@@ -733,6 +758,10 @@ public class DataManager {
     }
     
     private Nation deserializeNation(JsonObject json) {
+        if (json == null) {
+            return null;
+        }
+        
         UUID uuid = UUID.fromString(json.get("uuid").getAsString());
         String name = json.get("name").getAsString();
         UUID capital = UUID.fromString(json.get("capital").getAsString());
