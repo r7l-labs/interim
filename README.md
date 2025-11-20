@@ -1,100 +1,131 @@
-# Interim - A Comprehensive Nations Plugin for Paper 1.21.9
+# 🏛️ Interim
 
-**Interim** is a full-featured nations, towns, and claiming plugin for Paper 1.21.9 servers. It provides everything you need to create a political server with towns, nations, claiming mechanics, protection, and economy integration.
+[![Release](https://img.shields.io/github/v/release/r7l-labs/interim)](https://github.com/r7l-labs/interim/releases)
+[![License](https://img.shields.io/github/license/r7l-labs/interim)](LICENSE)
+[![Paper](https://img.shields.io/badge/Paper-1.21.9-blue)](https://papermc.io/)
 
-## Features
+**Interim** is a full-featured nations, towns, and claiming plugin for Paper 1.21.9 servers. Create political servers with advanced territory management, protection systems, economy integration, and BlueMap visualization.
 
-### Towns
-- **Create and manage towns** with mayors, assistants, and residents
-- **Chunk-based claiming system** with configurable costs and limits
-- **Town banks** with deposit/withdraw functionality
-- **Town spawns** for easy teleportation
-- **Customizable settings**: PvP, explosions, mob spawning, and open/closed towns
-- **Town boards** for announcements
-- **Invite system** with automatic expiration
+## ✨ Key Features
 
-### Nations
-- **Form nations** from multiple towns
-- **Capital system** with special privileges
-- **Alliance and enemy relations** between nations
-- **Nation banks** separate from town banks
-- **Nation colors** for identification
-- **Nation boards** for communication
+- 🏘️ **Towns & Nations** - Create towns, form nations, and build alliances
+- 🗺️ **Chunk-Based Claiming** - Claim territory with customizable costs and limits
+- 🛡️ **Advanced Protection** - Comprehensive block, entity, PvP, and explosion protection
+- 💰 **Economy Integration** - Vault support with town/nation banks and upkeep systems
+- 🗺️ **BlueMap Integration** - Visualize territories on web maps with custom colors
+- 📊 **War System** - Declare wars, set goals, and track history
+- 🎨 **Customizable Colors** - Set unique colors for towns and nations
+- 🔄 **Auto-Updates** - Built-in update checker and downloader
+- 📝 **Intuitive Commands** - Full tab completion and detailed help menus
 
-### Protection
-- **Block break/place protection** in claimed chunks
-- **Container and interactive block protection**
-- **Entity damage protection** (item frames, armor stands, paintings)
-- **Explosion protection** (configurable per town)
-- **PvP protection** with:
+## 📦 Features
+
+### 🏘️ Towns
+- Create and manage towns with mayors, assistants, and residents
+- Chunk-based claiming system with configurable costs and limits
+- Town banks with deposit/withdraw functionality
+- Town spawns for easy teleportation
+- Customizable settings: PvP, explosions, mob spawning, open/closed
+- Town boards for announcements
+- Invite system with automatic expiration
+- Custom town colors for map visualization
+
+### 🏛️ Nations
+- Form nations from multiple towns
+- Capital system with special privileges
+- Alliance and enemy relations between nations
+- Nation banks separate from town banks
+- Custom nation colors for identification
+- Nation boards for communication
+- War system with goals and history tracking
+
+### 🛡️ Protection
+- Block break/place protection in claimed chunks
+- Container and interactive block protection
+- Entity damage protection (item frames, armor stands, paintings)
+- Explosion protection (configurable per town)
+- Advanced PvP protection:
   - Town member protection
   - Nation member protection
   - Ally protection
   - Configurable wilderness PvP
-- **Mob spawning control** per town
+- Mob spawning control per town
 
-### Economy
-- **Vault integration** for economy features
-- **Costs for**:
-  - Town creation
-  - Nation creation
-  - Chunk claiming
-- **Town and nation banks** for shared resources
-- **Upkeep system** (configurable in config.yml)
+### 💰 Economy
+- Vault integration for economy features
+- Configurable costs for town/nation creation and claiming
+- Town and nation banks for shared resources
+- Optional upkeep system (configurable)
 
-### User Experience
-- **Territory notifications** when moving between claims
-- **Pending invite notifications** on join
-- **Comprehensive command system** with tab completion
-- **Detailed information displays** for towns and nations
-- **Rank system** with different permission levels
+### 🗺️ BlueMap Integration
+- Visualize all territories on web maps
+- Custom colors for towns and nations
+- Color hierarchy: nationless towns use town color, nation members use nation color
+- Territory outlines with proper boundary detection
+- Force update command for troubleshooting
 
-## Commands
+### ⚔️ War System
+- Declare wars between nations
+- Set war goals and track progress
+- War history and statistics
+- Surrender and peace treaty mechanics
+- Active war GUI for monitoring conflicts
 
-### Town Commands
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/town create <name>` | Create a new town | `interim.town.create` |
-| `/town delete [confirm]` | Delete your town | - |
-| `/town invite <player>` | Invite a player to your town | - |
-| `/town kick <player>` | Kick a player from your town | - |
-| `/town leave` | Leave your current town | - |
-| `/town claim` | Claim the chunk you're standing in | - |
-| `/town unclaim` | Unclaim the chunk you're standing in | - |
-| `/town spawn [town]` | Teleport to town spawn | - |
-| `/town setspawn` | Set your town's spawn point | - |
-| `/town deposit <amount>` | Deposit money to town bank | - |
-| `/town withdraw <amount>` | Withdraw money from town bank | - |
-| `/town info [town]` | View town information | - |
-| `/town list` | List all towns | - |
-| `/town toggle <option>` | Toggle town settings (pvp/explosions/mobs/open) | - |
-| `/town rank <player> <rank>` | Set a player's rank | - |
-| `/town board <message>` | Set the town board message | - |
-| `/town rename <name>` | Rename your town | - |
+### 🔧 Administration
+- Comprehensive admin commands for all features
+- Force create/delete towns and nations
+- Manual claim management
+- Set town/nation colors
+- Force update BlueMap markers
+- Built-in update checker and auto-downloader
+- Data recovery tools
+- Purge commands with confirmations
 
-**Aliases:** `/t`
+## 📚 Commands
 
-### Nation Commands
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/nation create <name>` | Create a new nation | `interim.nation.create` |
-| `/nation delete [confirm]` | Delete your nation | - |
-| `/nation add <town>` | Add a town to your nation | - |
-| `/nation kick <town>` | Kick a town from your nation | - |
-| `/nation leave` | Leave your current nation | - |
-| `/nation ally <nation>` | Set another nation as an ally | - |
-| `/nation enemy <nation>` | Set another nation as an enemy | - |
-| `/nation neutral <nation>` | Set another nation as neutral | - |
-| `/nation deposit <amount>` | Deposit money to nation bank | - |
-| `/nation withdraw <amount>` | Withdraw money from nation bank | - |
-| `/nation info [nation]` | View nation information | - |
-| `/nation list` | List all nations | - |
-| `/nation board <message>` | Set the nation board message | - |
-| `/nation rename <name>` | Rename your nation | - |
+### 🏘️ Town Commands (`/town` or `/t`)
 
-**Aliases:** `/n`
+| Command | Description |
+|---------|-------------|
+| `/town create <name>` | Create a new town |
+| `/town delete [confirm]` | Delete your town |
+| `/town invite <player>` | Invite a player to your town |
+| `/town kick <player>` | Kick a player from your town |
+| `/town leave` | Leave your current town |
+| `/town claim` | Claim the chunk you're standing in |
+| `/town unclaim` | Unclaim the chunk you're standing in |
+| `/town spawn [town]` | Teleport to town spawn |
+| `/town setspawn` | Set your town's spawn point |
+| `/town deposit <amount>` | Deposit money to town bank |
+| `/town withdraw <amount>` | Withdraw money from town bank |
+| `/town info [town]` | View town information |
+| `/town list` | List all towns |
+| `/town toggle <option>` | Toggle settings (pvp/explosions/mobs/open) |
+| `/town rank <player> <rank>` | Set a player's rank |
+| `/town board <message>` | Set the town board message |
+| `/town rename <name>` | Rename your town |
 
-### Plot Commands
+### 🏛️ Nation Commands (`/nation` or `/n`)
+
+| Command | Description |
+|---------|-------------|
+| `/nation create <name>` | Create a new nation |
+| `/nation delete [confirm]` | Delete your nation |
+| `/nation add <town>` | Add a town to your nation |
+| `/nation kick <town>` | Kick a town from your nation |
+| `/nation leave` | Leave your current nation |
+| `/nation ally <nation>` | Set another nation as an ally |
+| `/nation enemy <nation>` | Set another nation as an enemy |
+| `/nation neutral <nation>` | Set another nation as neutral |
+| `/nation deposit <amount>` | Deposit money to nation bank |
+| `/nation withdraw <amount>` | Withdraw money from nation bank |
+| `/nation info [nation]` | View nation information |
+| `/nation list` | List all nations |
+| `/nation board <message>` | Set the nation board message |
+| `/nation rename <name>` | Rename your nation |
+
+### 📍 Plot Commands (`/plot` or `/p`)
+
 | Command | Description |
 |---------|-------------|
 | `/plot info` | View information about the current chunk |
@@ -102,135 +133,218 @@
 | `/plot deny <town>` | Deny a town invite |
 | `/plot invites` | View all pending invites |
 
-**Aliases:** `/p`
+### 🗺️ Map Commands (`/map` or `/m`)
 
-**Note:** You can also use `/town accept <town>` and `/town deny <town>` for invites.
+| Command | Description |
+|---------|-------------|
+| `/map` | View claim map of surrounding area |
 
-## Permissions
+### 🛠️ Admin Commands (`/interimadmin`)
+
+| Command | Description |
+|---------|-------------|
+| `/interimadmin town create <name> <mayor>` | Force create town |
+| `/interimadmin town delete <name>` | Force delete town |
+| `/interimadmin town color <town> <color>` | Set town color |
+| `/interimadmin nation create <name> <capital>` | Force create nation |
+| `/interimadmin nation delete <name>` | Force delete nation |
+| `/interimadmin nation color <nation> <color>` | Set nation color |
+| `/interimadmin claim add <town> [x] [z] [world]` | Force claim |
+| `/interimadmin claim remove <x> <z> <world>` | Force unclaim |
+| `/interimadmin bluemap` | Force update BlueMap markers |
+| `/interimadmin update check` | Check for plugin updates |
+| `/interimadmin update download` | Download latest plugin version |
+| `/interimadmin reload` | Reload configuration |
+
+**Available Colors:** WHITE, RED, BLUE, GREEN, YELLOW, GOLD, AQUA, LIGHT_PURPLE, DARK_GREEN, DARK_AQUA, DARK_PURPLE
+
+## 🔑 Permissions
 
 | Permission | Description | Default |
 |------------|-------------|---------|
-| `interim.admin` | Bypass all protections | op |
+| `interim.admin` | Full admin access, bypass all protections | op |
 | `interim.town.create` | Create towns | true |
 | `interim.nation.create` | Create nations | true |
 
-## Configuration
+## ⚙️ Configuration
 
-The plugin comes with a comprehensive `config.yml`:
+Comprehensive `config.yml` with all settings:
 
 ```yaml
 # Town Settings
 town:
-  creation-cost: 1000.0          # Cost to create a town
-  max-name-length: 32            # Maximum town name length
-  min-name-length: 3             # Minimum town name length
-  claim-cost: 100.0              # Cost per chunk claimed
-  max-claims: 100                # Maximum chunks per town
-  upkeep-per-chunk: 10.0         # Daily upkeep cost per chunk
-  default-pvp: false             # Default PvP setting
-  default-explosions: false      # Default explosions setting
-  default-mob-spawning: true     # Default mob spawning setting
+  creation-cost: 1000.0
+  claim-cost: 100.0
+  max-claims: 100
+  upkeep-per-chunk: 10.0
+  default-pvp: false
+  default-explosions: false
+  default-mob-spawning: true
 
 # Nation Settings
 nation:
-  creation-cost: 5000.0          # Cost to create a nation
-  max-name-length: 32            # Maximum nation name length
-  min-name-length: 3             # Minimum nation name length
-  min-towns: 2                   # Minimum towns to form a nation (not enforced)
-  daily-upkeep: 500.0            # Daily upkeep cost
-  allow-neutral: true            # Allow neutral nations
-
-# General Settings
-general:
-  debug: false                   # Enable debug mode
-  language: en                   # Language (not implemented)
-  save-interval: 6000            # Auto-save interval (ticks)
-  max-invites: 10                # Max pending invites per player
+  creation-cost: 5000.0
+  min-towns: 2
+  daily-upkeep: 500.0
 
 # Protection Settings
 protection:
-  block-break: true              # Protect blocks from breaking
-  block-place: true              # Protect against block placement
-  container-access: true         # Protect containers
-  entity-damage: true            # Protect entities
-  pvp: true                      # Enable PvP protection
-  wilderness-pvp: true           # Allow PvP in wilderness
+  block-break: true
+  block-place: true
+  container-access: true
+  entity-damage: true
+  pvp: true
+  wilderness-pvp: true
 
 # Economy Settings
 economy:
-  enabled: true                  # Enable economy features
-  use-vault: true                # Use Vault for economy
+  enabled: true
+  use-vault: true
 ```
 
-## Data Storage
+See full config in [config.yml](src/main/resources/config.yml)
 
-All data is stored in JSON format in the `plugins/Interim/data/` directory:
-- `towns/*.json` - Individual town data files
-- `nations/*.json` - Individual nation data files
-- `residents/residents.json` - All resident data
-- `claims/claims.json` - All claim data
+## 💾 Data Storage
 
-The plugin automatically saves data:
+All data is stored in JSON format in `plugins/Interim/data/`:
+- `towns/*.json` - Individual town data
+- `nations/*.json` - Individual nation data
+- `residents/residents.json` - Resident data
+- `claims/claims.json` - Claim data
+
+**Auto-save:**
 - Every 5 minutes (configurable)
 - On server shutdown
-- When major changes occur
+- After major changes
 
-## Rank System
+## 👥 Rank System
 
 ### Town Ranks
-1. **Mayor** - Full control over the town
-   - Create/delete town
-   - Claim/unclaim chunks
-   - Invite/kick members
-   - Manage settings
-   - Set spawn
-   - Withdraw from bank
-   - Promote/demote members
+1. **👑 Mayor** - Full town control
+   - Create/delete, claim/unclaim
+   - Invite/kick, manage settings
+   - Bank withdrawal, promotions
 
-2. **Assistant** - Trusted helper
+2. **⭐ Assistant** - Trusted helper
    - Claim/unclaim chunks
    - Invite members
-   - Set spawn
-   - Set board message
+   - Set spawn and board
 
-3. **Resident** - Basic member
+3. **👤 Resident** - Basic member
    - Build in town territory
    - Use town spawn
    - Deposit to bank
 
-## Building
+## 🚀 Quick Start
 
-To build the plugin:
+1. **Install Dependencies**
+   ```bash
+   # Required
+   Paper 1.21.9 server
+   
+   # Optional (for economy)
+   Vault plugin
+   Economy plugin (e.g., EssentialsX)
+   
+   # Optional (for map visualization)
+   BlueMap plugin
+   ```
+
+2. **Install Plugin**
+   - Download latest release from [GitHub Releases](https://github.com/r7l-labs/interim/releases)
+   - Place JAR in `plugins/` folder
+   - Start server
+
+3. **Check for Updates**
+   ```
+   /interimadmin update check
+   /interimadmin update download
+   ```
+
+4. **Configure**
+   - Edit `plugins/Interim/config.yml`
+   - Reload: `/interimadmin reload`
+
+5. **Create Your First Town**
+   ```
+   /town create MyTown
+   /town claim
+   /town setspawn
+   ```
+
+## 🛠️ Building from Source
 
 ```bash
+# Clone repository
+git clone https://github.com/r7l-labs/interim.git
+cd interim
+
+# Build with Maven
 mvn clean package
+
+# Or use the build script
+./build.sh
+
+# JAR will be in target/interim-<version>.jar
 ```
 
-The compiled JAR will be in the `target/` directory.
+**Requirements:**
+- Java 21 or higher
+- Maven 3.6+
 
-## Dependencies
+## 🗺️ BlueMap Setup
 
-- **Paper 1.21.9** (required)
-- **Vault** (optional, for economy features)
-- **An economy plugin** like EssentialsX (optional)
+1. Install BlueMap plugin
+2. Interim automatically detects and integrates
+3. View territories on your web map with custom colors
+4. Use `/interimadmin bluemap` to force updates
 
-## Installation
+**Features:**
+- Territory outlines with proper boundaries
+- Custom colors per town/nation
+- Hover labels with town names
+- Automatic updates on claim changes
 
-1. Download or build the plugin JAR
-2. Place it in your server's `plugins/` folder
-3. (Optional) Install Vault and an economy plugin
-4. Start your server
-5. Configure the plugin in `plugins/Interim/config.yml`
-6. Reload or restart your server
+## 🔄 Auto-Update Feature
 
-## Support
+Stay up-to-date effortlessly:
 
-For issues, suggestions, or contributions, please visit the GitHub repository.
+```bash
+# Check for updates
+/interimadmin update check
 
-## License
+# Download latest version
+/interimadmin update download
 
-See LICENSE file for details.
+# Restart server to apply
+```
+
+Updates download to `plugins/update/` for automatic installation on restart.
+
+## 📖 Documentation
+
+- [War System Guide](docs/war.md)
+- [War Tutorial](docs/war_tutorial.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+See [LICENSE](LICENSE) file for details.
+
+## 🙏 Support
+
+- **Issues:** [GitHub Issues](https://github.com/r7l-labs/interim/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/r7l-labs/interim/discussions)
 
 ---
 
-**Made with ❤️ by r7l-labs**
+<div align="center">
+
+**Made with ❤️ by [r7l-labs](https://github.com/r7l-labs)**
+
+⭐ Star us on GitHub if you find this useful!
+
+</div>
