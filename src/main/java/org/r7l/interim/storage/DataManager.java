@@ -640,6 +640,7 @@ public class DataManager {
         json.addProperty("mobSpawning", town.isMobSpawning());
         json.addProperty("board", town.getBoard());
         json.addProperty("tag", town.getTag());
+        json.addProperty("color", town.getColor().name());
         
         return json;
     }
@@ -686,6 +687,13 @@ public class DataManager {
         town.setBoard(json.get("board").getAsString());
         if (json.has("tag")) {
             town.setTag(json.get("tag").getAsString());
+        }
+        if (json.has("color")) {
+            try {
+                town.setColor(NationColor.valueOf(json.get("color").getAsString()));
+            } catch (IllegalArgumentException e) {
+                town.setColor(NationColor.AQUA); // Default fallback
+            }
         }
         
         return town;
