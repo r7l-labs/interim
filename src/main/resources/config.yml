@@ -129,6 +129,17 @@ integrations:
     enabled: true
     # Allow Bedrock players to use all features
     full-support: true
+  
+  # DecentHolograms Integration
+  decentholograms:
+    # Enable DecentHolograms integration
+    enabled: true
+    # Create holograms at town spawns
+    town-spawns: true
+    # Create holograms at nation capitals
+    nation-capitals: true
+    # Update interval in seconds (0 = update on changes only)
+    update-interval: 60
 
 # Visual Settings
 visual:

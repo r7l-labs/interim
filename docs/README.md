@@ -27,6 +27,7 @@ Welcome to the complete documentation for Interim - a comprehensive nations, tow
 ### Integrations
 - [PlaceholderAPI](integrations/placeholderapi.md) - 40+ placeholders for external plugins
 - [BlueMap](integrations/bluemap.md) - Web map visualization
+- [DecentHolograms](integrations/decentholograms.md) - Floating holograms at spawns
 - [Vault](integrations/vault.md) - Economy integration
 - [Floodgate](integrations/floodgate.md) - Bedrock player support
 

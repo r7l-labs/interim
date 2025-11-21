@@ -19,6 +19,7 @@ import org.r7l.interim.command.PlotCommand;
 import org.r7l.interim.command.TownCommand;
 import org.r7l.interim.config.ConfigUpdater;
 import org.r7l.interim.integration.BlueMapIntegration;
+import org.r7l.interim.integration.DecentHologramsIntegration;
 import org.r7l.interim.integration.FloodgateIntegration;
 import org.r7l.interim.listener.GUIListener;
 import org.r7l.interim.listener.ProtectionListener;
@@ -31,6 +32,7 @@ public class Interim extends JavaPlugin {
     private DataManager dataManager;
     private Economy economy;
     private BlueMapIntegration blueMapIntegration;
+    private DecentHologramsIntegration hologramsIntegration;
     private FloodgateIntegration floodgateIntegration;
     private SpawnParticleManager particleManager;
     // Active teleport sessions (player UUID -> session)
@@ -112,6 +114,11 @@ public class Interim extends JavaPlugin {
             }
         } else {
             getLogger().info("PlaceholderAPI not found - placeholder support disabled");
+        }
+        
+        // Setup DecentHolograms integration
+        if (getConfig().getBoolean("integrations.decentholograms.enabled", true)) {
+            setupDecentHolograms();
         }
         
         // Initialize particle manager
@@ -303,6 +310,11 @@ public class Interim extends JavaPlugin {
             blueMapIntegration.disable();
         }
         
+        // Disable DecentHolograms integration
+        if (hologramsIntegration != null) {
+            hologramsIntegration.disable();
+        }
+        
         // Save data
         getLogger().info("Saving data...");
         dataManager.saveAll();
@@ -355,6 +367,20 @@ public class Interim extends JavaPlugin {
         }
     }
     
+    private void setupDecentHolograms() {
+        if (getServer().getPluginManager().getPlugin("DecentHolograms") == null) {
+            getLogger().info("DecentHolograms not found. Hologram features disabled.");
+            return;
+        }
+        
+        try {
+            hologramsIntegration = new DecentHologramsIntegration(this);
+            hologramsIntegration.enable();
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize DecentHolograms integration: " + e.getMessage());
+        }
+    }
+    
     private void startAutoSave() {
         long saveInterval = getConfig().getLong("general.save-interval", 6000); // Default 5 minutes
         
@@ -396,6 +422,10 @@ public class Interim extends JavaPlugin {
     
     public BlueMapIntegration getBlueMapIntegration() {
         return blueMapIntegration;
+    }
+    
+    public DecentHologramsIntegration getHologramsIntegration() {
+        return hologramsIntegration;
     }
     
     public SpawnParticleManager getParticleManager() {
